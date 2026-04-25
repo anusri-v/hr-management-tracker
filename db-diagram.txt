@@ -1,0 +1,82 @@
+table users {
+  id int pk
+  google_sub text unique
+  email citext unique
+  email_verified boolean
+  name text
+  picture text
+  created_at timestampz
+  updated_at timestampz
+  last_login_at timestampz
+  authorized_at timestampz
+  authorized_by id // primary key reference
+  revoked_at timestampz // nullable
+  revoked_by id // primary key reference
+  status int // 0 - pending, 1 - active, 3 - revoked
+}
+
+table employees {
+  id int pk
+  employee_id text unique
+  full_name text
+  gender text
+  date_of_birth date
+  contact_number text // encrypt
+  email_id text
+  address text // encrypt
+  department text
+  designation text
+  reporting_manager_id text // employees.id reference
+  employment_type int
+  date_of_joining date
+  work_location text
+  employment_status boolean
+  source_of_hire int
+  interview_date date
+  interview_panel text // employees.id reference
+  offer_letter_date date
+  created_at timestampz
+  updated_at timestampz
+}
+
+table compensation_details { 
+  id int pk
+  employee_id text // employees.id reference
+  salary text // encrypt
+  effective_from timestampz
+  effective_to timestampz
+  created_at timestampz
+  updated_at timestampz
+}
+
+table statutory_details {
+  id int pk
+  employee_id text // employees.id reference
+  bank_name text // encrypt
+  account_number text // encrypt
+  ifsc_code text // encrypt
+  pan_number text // encrypt
+  aadhar_number text // encrypt
+  pf_number text // encrypt
+  created_at timestampz
+  updated_at timestampz
+}
+
+table documents {
+  id int pk
+  employee_id text // employees.id reference
+  file_path text
+  file_type text 
+  created_at timestampz
+  updated_at timestampz
+}
+
+table exit_details {
+  id int pk
+  employee_id text // employees.id reference
+  last_working_day date
+  exit_reason text
+  final_settlement_status text
+  created_at timestampz
+  updated_at timestampz
+}

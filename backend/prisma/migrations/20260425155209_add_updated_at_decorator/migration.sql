@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "users" ALTER COLUMN "name" DROP NOT NULL,
+ALTER COLUMN "picture" DROP NOT NULL,
+ALTER COLUMN "authorized_by" DROP NOT NULL,
+ALTER COLUMN "authorized_at" DROP NOT NULL;

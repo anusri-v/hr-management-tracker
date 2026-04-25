@@ -1,35 +1,36 @@
-const express = require('express')
-const cors = require('cors')
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const prisma = require('./lib/prisma'); 
+const authRouter = require('./routes/auth');
+const requireAuth = require('./middleware/requireAuth');
 
-const app = express()
+const app = express();
 
 app.use(cors({
-    origin: ['http://localhost:5500', 'http://127.0.0.1:5500']
-}))
-app.use(express.json())
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: true,
+}));
+app.use(express.json());
+app.use(cookieParser());
 
-app.get('/', (req, res) => {
-    res.send('Hello from Express')
-})
+app.use('/auth', authRouter);
 
-app.get('/people', (req, res) => {
-    res.json([
-        { id: 1, name: 'Anusri' },
-        { id: 2, name: 'Rakesh'}
-    ])
-})
+app.get('/me', requireAuth, async (req, res) => {
+    const userRecord = await prisma.user.findUnique({
+        where: {
+            email: req.user.email,
+        }
+    })
 
-app.get('/message', (req, res) => {
-    res.json({ message: "Hello from the express server" })
-})
+    if (!userRecord) {
+        return res.status(404).json({ error: 'User not found' });
+    }
 
-app.post('/message', (req, res) => {
-    const { name, message } = req.body
-
-    console.log('New message: ', name, message)
-    res.json({ message: "Thank you for reaching out!!" })
-})
+    res.json({ user: userRecord });
+});
 
 app.listen(3000, () => {
     console.log('The server is running');
-})
+});
