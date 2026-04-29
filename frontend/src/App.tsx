@@ -1,28 +1,15 @@
 import { useEffect, useState } from 'react'
 import { googleLogout } from '@react-oauth/google'
-import './App.css'
-import AccessPendingPage from './features/auth/AccessPendingPage';
-import AccessRevokedPage from './features/auth/AccessRevokedPage';
-import LoginPage from './features/auth/LoginPage';
-import { USER_STATUS } from './constants/user';
+import LoginPage from './features/auth/LoginPage'
 
 const API_URL = 'http://localhost:3000'
 
 type User = {
-  authorized_at?: string
-  authorized_by?: number
-  created_at: string
-  email: string
-  email_verified: boolean
-  google_sub: string
   id: number
-  last_login_at: string
+  email: string
   name?: string
   picture?: string
-  revoked_at?: null
-  revoked_by?: number
   status: number
-  updated_at: string
 }
 
 function App() {
@@ -70,17 +57,12 @@ function App() {
 
   if (loading) return <p>Loading…</p>
 
-  if (user?.status === USER_STATUS.PENDING) {
-    return <AccessPendingPage email="hr-blr@shopup.org" onSignOut={handleLogout} />
-  }
-
-  if (user?.status === USER_STATUS.REVOKED) {
+  if (user) {
     return (
-      <AccessRevokedPage
-        email="hr-blr@shopup.org"
-        onSignOut={handleLogout}
-        onRequestAccess={() => {}}
-      />
+      <div>
+        <p>Signed in as {user.email}</p>
+        <button onClick={handleLogout}>Sign out</button>
+      </div>
     )
   }
 
