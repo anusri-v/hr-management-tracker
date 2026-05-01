@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   FileOutlined,
   HomeOutlined,
@@ -8,34 +7,21 @@ import {
   LogoutOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Avatar, Button, Layout, Menu, Flex } from 'antd';
+import { Avatar, Button, Layout, Menu, Flex, Tooltip } from 'antd';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import type { User } from '../../App';
 import styles from './Main.module.css';
 
-const { Sider, Header } = Layout;
+const { Sider, Header, Content } = Layout;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
-function getItem(
-  label: React.ReactNode,
-  key: React.Key,
-  icon?: React.ReactNode,
-  children?: MenuItem[],
-): MenuItem {
-  return {
-    key,
-    icon,
-    children,
-    label,
-  } as MenuItem;
-}
-
 const items: MenuItem[] = [
-  getItem('Dashboard', '1', <HomeOutlined />),
-  getItem('Employees', '2', <UserOutlined />),
-  getItem('Reminders', '3', <BellOutlined />),
-  getItem('User Access', '4', <KeyOutlined />),
-  getItem('Activity Log', '5', <FileOutlined />),
+  { key: '/dashboard', icon: <HomeOutlined />, label: 'Dashboard' },
+  { key: '/employees', icon: <UserOutlined />, label: 'Employees' },
+  { key: '/reminders', icon: <BellOutlined />, label: 'Reminders' },
+  { key: '/user-access', icon: <KeyOutlined />, label: 'User Access' },
+  { key: '/activity-log', icon: <FileOutlined />, label: 'Activity Log' },
 ];
 
 type MainProps = {
@@ -44,12 +30,20 @@ type MainProps = {
 }
 
 const Main = ({ user, handleLogout }: MainProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
     <Layout className={styles.layout}>
       <Sider theme='light'>
         <Flex vertical className={styles.sider}>
           <h2>Shop<span className="shopup-logo-accent">Up</span></h2>
-          <Menu defaultSelectedKeys={['1']} mode="inline" items={items} />
+          <Menu
+            mode="inline"
+            items={items}
+            selectedKeys={[location.pathname]}
+            onClick={({ key }) => navigate(key)}
+          />
         </Flex>
       </Sider>
 
@@ -63,12 +57,17 @@ const Main = ({ user, handleLogout }: MainProps) => {
             <Avatar src={user.picture} size={32}>
               {user.name?.[0]?.toUpperCase()}
             </Avatar>
-            <Button icon={<LogoutOutlined />} onClick={handleLogout} />
+            <Tooltip title="Logout">
+              <Button icon={<LogoutOutlined />} onClick={handleLogout} />
+            </Tooltip>
           </Flex>
         </Header>
+        <Content className={styles.content}>
+          <Outlet />
+        </Content>
       </Layout>
     </Layout>
-  )
-}
+  );
+};
 
 export default Main;

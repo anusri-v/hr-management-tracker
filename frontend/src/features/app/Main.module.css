@@ -32,3 +32,8 @@
   font-size: 11px;
   color: var(--color-text-muted);
 }
+
+.content {
+  padding: 24px;
+  background: var(--color-bg-page);
+}
