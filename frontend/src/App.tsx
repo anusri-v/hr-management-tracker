@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { googleLogout } from '@react-oauth/google'
 import LoginPage from './features/auth/LoginPage'
+import RedirectPage from './features/auth/RedirectPage'
 
 const API_URL = 'http://localhost:3000'
 
-type User = {
+export type User = {
   id: number
   email: string
   name?: string
@@ -59,10 +60,7 @@ function App() {
 
   if (user) {
     return (
-      <div>
-        <p>Signed in as {user.email}</p>
-        <button onClick={handleLogout}>Sign out</button>
-      </div>
+      <RedirectPage user = {user} handleLogout={handleLogout} />
     )
   }
 

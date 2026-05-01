@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
 import App from './App.tsx'
+import { ConfigProvider } from 'antd'
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 if (!clientId) {
@@ -10,9 +11,11 @@ if (!clientId) {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={clientId}>
-      <App />
-    </GoogleOAuthProvider>
-  </StrictMode>,
+  <ConfigProvider theme={{ token: { colorPrimary: '#3CB5B0' } }}>
+    <StrictMode>
+      <GoogleOAuthProvider clientId={clientId}>
+        <App />
+      </GoogleOAuthProvider>
+    </StrictMode>
+  </ConfigProvider>,
 )
