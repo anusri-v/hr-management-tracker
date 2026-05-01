@@ -1,0 +1,69 @@
+.page {
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: var(--color-bg-page);
+}
+
+.card {
+  background: var(--color-bg-card);
+  align-items: center;
+  width: 25%;
+  padding: 60px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.iconBadge {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+}
+
+.iconBadgePending {
+  composes: iconBadge;
+  background: var(--color-pending-bg);
+}
+
+.iconBadgeRevoked {
+  composes: iconBadge;
+  background: var(--color-revoked-bg);
+}
+
+.iconPending {
+  font-size: 22px;
+  color: var(--color-pending-fg);
+}
+
+.iconRevoked {
+  font-size: 22px;
+  color: var(--color-revoked-fg);
+}
+
+.body {
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.statusRow {
+  min-width: 100%;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  margin-top: 20px;
+}
+
+.statusLabel {
+  font-size: 12px;
+}
+
+.signOut {
+  margin-top: 40px;
+}
+
+.actions {
+  min-width: 100%;
+  margin-top: 40px;
+}

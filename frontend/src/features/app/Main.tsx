@@ -10,6 +10,7 @@ import {
 import type { MenuProps } from 'antd';
 import { Avatar, Button, Layout, Menu, Flex } from 'antd';
 import type { User } from '../../App';
+import styles from './Main.module.css';
 
 const { Sider, Header } = Layout;
 
@@ -43,35 +44,21 @@ type MainProps = {
 }
 
 const Main = ({ user, handleLogout }: MainProps) => {
-  console.log(user);
-
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout className={styles.layout}>
       <Sider theme='light'>
-        <Flex vertical style={{ height: '100%', alignItems: 'center' }}>
-          <h2>Shop<span style={{ color: '#FFD43B' }}>Up</span></h2>
+        <Flex vertical className={styles.sider}>
+          <h2>Shop<span className="shopup-logo-accent">Up</span></h2>
           <Menu defaultSelectedKeys={['1']} mode="inline" items={items} />
         </Flex>
       </Sider>
 
       <Layout>
-        <Header
-          style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 1,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            background: '#fff',
-            color: '#000',
-            padding: '0 24px',
-          }}
-        >
+        <Header className={styles.header}>
           <Flex align="center" gap={12}>
-            <Flex vertical align="end" style={{ lineHeight: 1.2 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>{user.name}</span>
-              <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.6)' }}>{user.email}</span>
+            <Flex vertical align="end" className={styles.userInfo}>
+              <span className={styles.userName}>{user.name}</span>
+              <span className={styles.userEmail}>{user.email}</span>
             </Flex>
             <Avatar src={user.picture} size={32}>
               {user.name?.[0]?.toUpperCase()}
@@ -80,7 +67,7 @@ const Main = ({ user, handleLogout }: MainProps) => {
           </Flex>
         </Header>
       </Layout>
-    </Layout >
+    </Layout>
   )
 }
 
