@@ -1,6 +1,6 @@
 import { Button, Col, Flex, Radio, Row, Upload } from "antd";
 import { UploadOutlined, SaveOutlined } from '@ant-design/icons';
-import type { Employee } from "./AddEmployee";
+import type { Employee } from "../../utils/types/employee";
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -13,12 +13,6 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
         switch (field) {
             case 'offer_letter_status':
                 setEmployee({ ...employee, offer_letter_status: value })
-                break;
-            case 'aadhar_number':
-                setEmployee({ ...employee, aadhar_number: value })
-                break;
-            case 'uan_number':
-                setEmployee({ ...employee, uan_number: value })
                 break;
             default:
                 break;

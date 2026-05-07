@@ -4,6 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const prisma = require('./lib/prisma'); 
 const authRouter = require('./routes/auth');
+const employeeRouter = require('./routes/employee');
 const requireAuth = require('./middleware/requireAuth');
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/auth', authRouter);
+app.use('/employee', employeeRouter);
 
 app.get('/me', requireAuth, async (req, res) => {
     const userRecord = await prisma.user.findUnique({

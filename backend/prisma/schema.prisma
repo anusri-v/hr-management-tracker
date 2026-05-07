@@ -7,8 +7,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator fieldEncryption {
+  provider = "prisma-field-encryption"
+}
+
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -28,4 +33,84 @@ model User {
   updated_at     DateTime  @updatedAt
 
   @@map("users")
+}
+
+model Employee {
+  id                      Int                   @id @default(autoincrement())
+  employee_id             String                @unique
+  talentx_id              String?
+  full_name               String
+  gender                  String
+  date_of_birth           DateTime              @db.Date
+  contact_number          String /// @encrypted
+  email_id                String
+  address                 String /// @encrypted
+  department              String?
+  designation             String?
+  reporting_manager_id    Int?
+  employment_type         String?
+  family_members          Json?
+  date_of_joining         DateTime?             @db.Date
+  internal_transfer_date  DateTime?             @db.Date
+  expat_status            String                @default("native")
+  work_location           String?
+  employment_status       String                @default("active")
+  emergency_contact_name  String?
+  emergency_contact_phone String?
+  source_of_hire          String?
+  interview_date          DateTime?             @db.Date
+  interview_panel         String?
+  offer_letter_date       DateTime?             @db.Date
+  created_at              DateTime?             @default(now())
+  updated_at              DateTime?             @updatedAt
+  compensation_details    CompensationDetails[]
+  statutory_details       StatutoryDetails[]
+  exit_details            ExitDetails[]
+
+  @@map("employees")
+}
+
+model CompensationDetails {
+  id             Int       @id @default(autoincrement())
+  employee_id    Int
+  currency       String /// @encrypted
+  salary_ctc     String /// @encrypted
+  breakdown      String? /// @encrypted
+  effective_from DateTime? @db.Date
+  effective_to   DateTime? @db.Date
+  created_at     DateTime? @default(now())
+  updated_at     DateTime? @updatedAt
+
+  employee Employee @relation(fields: [employee_id], references: [id])
+
+  @@map("compensation_details")
+}
+
+model StatutoryDetails {
+  id             Int       @id @default(autoincrement())
+  employee_id    Int
+  bank_name      String? /// @encrypted
+  account_number String? /// @encrypted
+  ifsc_code      String? /// @encrypted
+  pan_number     String? /// @encrypted
+  aadhar_number  String? /// @encrypted
+  pf_number      String? /// @encrypted
+  created_at     DateTime? @default(now())
+  updated_at     DateTime? @updatedAt
+  employee       Employee  @relation(fields: [employee_id], references: [id])
+
+  @@map("statutory_details")
+}
+
+model ExitDetails {
+  id                      Int       @id @default(autoincrement())
+  employee_id             Int
+  last_working_day        DateTime? @db.Date
+  exit_reason             String? /// @encrypted
+  final_settlement_status String?
+  created_at              DateTime? @default(now())
+  updated_at              DateTime? @updatedAt
+  employee                Employee  @relation(fields: [employee_id], references: [id])
+
+  @@map("exit_details")
 }

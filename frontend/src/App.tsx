@@ -11,8 +11,10 @@ import RemindersPage from './features/reminders/RemindersPage'
 import UserAccessPage from './features/userAccess/UserAccessPage'
 import ActivityLogPage from './features/activityLog/ActivityLogPage'
 import AddEmployee from './features/employees/AddEmployee'
+import ViewEmployee from './features/employees/ViewEmployee'
+import EditEmployee from './features/employees/EditEmployee'
 
-const API_URL = 'http://localhost:3000'
+export const API_URL = 'http://localhost:3000'
 
 export type User = {
   id: number
@@ -120,6 +122,8 @@ function App() {
         <Route path="/user-access" element={<UserAccessPage />} />
         <Route path="/activity-log" element={<ActivityLogPage />} />
         <Route path="/employees/add" element={<AddEmployee />} />
+        <Route path="/employees/view/:employeeId" element={<ViewEmployee />} />
+        <Route path="/employees/edit/:employeeId" element={<EditEmployee />} />
       </Route>
       <Route path="*" element={<Navigate to={home} replace />} />
     </Routes>

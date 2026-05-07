@@ -1,10 +1,10 @@
-import { Button, Col, DatePicker, Flex, Input, Radio, Row } from "antd";
+import { Button, Col, DatePicker, Flex, Form, Input, message, Radio, Row } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { SaveOutlined } from "@ant-design/icons";
-import dayjs from "dayjs";
-import type { Employee } from "./AddEmployee";
-
-const DOB_FORMAT = "YYYY-MM-DD";
+import dayjs, { type Dayjs } from "dayjs";
+import type { Employee } from "../../utils/types/employee";
+import { API_URL } from "../../App";
+import { DATE_FORMAT } from "../../utils/constants/constants";
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -12,111 +12,266 @@ type BasicInformationSectionProps = {
     handleSectionNavigation: (dir: string) => void
 }
 
+type BasicInfoFormValues = {
+    employee_id: string;
+    full_name: string;
+    gender: string;
+    date_of_birth: Dayjs | null;
+    contact_number: string;
+    email_id: string;
+    address: string;
+    emergency_contact_name: string;
+    emergency_contact_number: string;
+    father_name: string;
+    mother_name: string;
+    spouse_name: string;
+    child1_name: string;
+    child2_name: string;
+}
+
 const BasicInformationSection = ({ employee, setEmployee, handleSectionNavigation }: BasicInformationSectionProps) => {
-    const handleInputChange = (value: string, field: string) => {
-        switch (field) {
-            case 'employee_id':
-                setEmployee({ ...employee, employee_id: value })
-                break;
-            case 'full_name':
-                setEmployee({ ...employee, full_name: value })
-                break;
-            case 'gender':
-                setEmployee({ ...employee, gender: value })
-                break;
-            case 'dob':
-                setEmployee({ ...employee, date_of_birth: value })
-                break;
-            case 'contact_number':
-                setEmployee({ ...employee, contact_number: value })
-                break;
-            case 'email_id':
-                setEmployee({ ...employee, email_id: value })
-                break;
-            case 'address':
-                setEmployee({ ...employee, address: value })
-                break;
-            default:
-                break;
+    const [form] = Form.useForm<BasicInfoFormValues>();
+
+    const initialValues: BasicInfoFormValues = {
+        employee_id: employee.employee_id,
+        full_name: employee.full_name,
+        gender: employee.gender || 'prefer-not-to-say',
+        date_of_birth: employee.date_of_birth ? dayjs(employee.date_of_birth, DATE_FORMAT) : null,
+        contact_number: employee.contact_number,
+        email_id: employee.email_id,
+        address: employee.address,
+        emergency_contact_name: employee.emergency_contact_name ?? '',
+        emergency_contact_number: employee.emergency_contact_phone ?? '',
+        father_name: employee.family_members?.father_name ?? '',
+        mother_name: employee.family_members?.mother_name ?? '',
+        spouse_name: employee.family_members?.spouse_name ?? '',
+        child1_name: employee.family_members?.child1_name ?? '',
+        child2_name: employee.family_members?.child2_name ?? '',
+    };
+
+    const isEditMode = employee.id !== undefined;
+
+    const syncFormToParent = (values: BasicInfoFormValues) => {
+        setEmployee((prev) => ({
+            ...prev,
+            employee_id: values.employee_id ?? '',
+            full_name: values.full_name ?? '',
+            gender: values.gender ?? '',
+            date_of_birth: values.date_of_birth ? values.date_of_birth.format(DATE_FORMAT) : '',
+            contact_number: values.contact_number ?? '',
+            email_id: values.email_id ?? '',
+            address: values.address ?? '',
+            emergency_contact_name: values.emergency_contact_name ?? '',
+            emergency_contact_phone: values.emergency_contact_number ?? '',
+            family_members: {
+                father_name: values.father_name ?? '',
+                mother_name: values.mother_name ?? '',
+                spouse_name: values.spouse_name ?? '',
+                child1_name: values.child1_name ?? '',
+                child2_name: values.child2_name ?? '',
+            },
+        }));
+    };
+
+    async function handleEmployeeSave(values: BasicInfoFormValues) {
+        const employeeInfo = {
+            employee_id: values.employee_id,
+            full_name: values.full_name,
+            gender: values.gender,
+            date_of_birth: values.date_of_birth ? values.date_of_birth.format(DATE_FORMAT) : '',
+            contact_number: values.contact_number,
+            email_id: values.email_id,
+            address: values.address,
+            emergency_contact_name: values.emergency_contact_name,
+            emergency_contact_phone: values.emergency_contact_number,
+            family_members: {
+                father_name: values.father_name ?? null,
+                mother_name: values.mother_name ?? null,
+                spouse_name: values.spouse_name ?? null,
+                child1_name: values.child1_name ?? null,
+                child2_name: values.child2_name ?? null,
+            },
+        };
+
+        const url = isEditMode
+            ? `${API_URL}/employee/${employee.employee_id}`
+            : `${API_URL}/employee`;
+        const method = isEditMode ? 'PATCH' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employeeInfo }),
+            });
+            const data = await res.json();
+
+            if (!data.success) {
+                message.error(data.message ?? 'Something went wrong');
+                return;
+            }
+
+            setEmployee((prev) => ({ ...prev, id: data.employee.id }));
+            message.success(data.message);
+            handleSectionNavigation('next');
+        } catch (e) {
+            console.error('Save failed:', e);
+            message.error('Internal server error');
         }
     }
 
     return (
-        <>
-            <Flex vertical style={{ width: '100%' }}>
+        <Flex vertical style={{ width: '100%' }}>
+            <Form
+                form={form}
+                layout="vertical"
+                initialValues={initialValues}
+                onFinish={handleEmployeeSave}
+                onValuesChange={(_, allValues) => syncFormToParent(allValues)}
+                style={{ width: '100%' }}
+            >
                 <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
-                    <Row gutter={[24, 48]}>
+                    <Row gutter={[24, 0]}>
                         <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Employee ID<span style={{ color: 'red' }}> *</span></span>
-                                <Input placeholder="Employee ID" value={employee.employee_id} onChange={(e) => handleInputChange(e.target.value, 'employee_id')} />
-                            </Flex>
+                            <Form.Item
+                                label="Employee ID"
+                                name="employee_id"
+                                rules={[{ required: true, message: 'Employee ID is required' }]}
+                            >
+                                <Input disabled={isEditMode} placeholder="Employee ID" />
+                            </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Full Name<span style={{ color: 'red' }}> *</span></span>
-                                <Input placeholder="Full Name" value={employee.full_name} onChange={(e) => handleInputChange(e.target.value, 'full_name')} />
-                            </Flex>
+                            <Form.Item
+                                label="Full Name"
+                                name="full_name"
+                                rules={[{ required: true, message: 'Full Name is required' }]}
+                            >
+                                <Input placeholder="Full Name" />
+                            </Form.Item>
                         </Col>
                     </Row>
-                    <Row gutter={[24, 48]}>
+                    <Row gutter={[24, 0]}>
                         <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Gender<span style={{ color: 'red' }}> *</span></span>
-                                <Radio.Group defaultValue="prefer-not-to-say" value={employee.gender} onChange={(e) => handleInputChange(e.target.value, 'gender')}>
+                            <Form.Item
+                                label="Gender"
+                                name="gender"
+                                rules={[{ required: true, message: 'Gender is required' }]}
+                            >
+                                <Radio.Group>
                                     <Radio.Button value="female">Female</Radio.Button>
                                     <Radio.Button value="male">Male</Radio.Button>
-                                    <Radio.Button value="non-binary">Non-binary</Radio.Button>
                                     <Radio.Button value="prefer-not-to-say">Prefer not to say</Radio.Button>
                                 </Radio.Group>
-                            </Flex>
+                            </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Date of Birth<span style={{ color: 'red' }}> *</span></span>
-                                <DatePicker
-                                    value={employee.date_of_birth ? dayjs(employee.date_of_birth, DOB_FORMAT) : null}
-                                    format={DOB_FORMAT}
-                                    onChange={(_, dateString) => handleInputChange(dateString as string, 'dob')}
-                                />
-                            </Flex>
+                            <Form.Item
+                                label="Date of Birth"
+                                name="date_of_birth"
+                                rules={[{ required: true, message: 'Date of Birth is required' }]}
+                            >
+                                <DatePicker format={DATE_FORMAT} style={{ width: '100%' }} />
+                            </Form.Item>
                         </Col>
                     </Row>
-                    <Row gutter={[24, 48]}>
+                    <Row gutter={[24, 0]}>
                         <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Contact Number<span style={{ color: 'red' }}> *</span></span>
-                                <Input placeholder="Contact Number" value={employee.contact_number} onChange={(e) => handleInputChange(e.target.value, 'contact_number')} />
-                            </Flex>
+                            <Form.Item
+                                label="Contact Number"
+                                name="contact_number"
+                                rules={[{ required: true, message: 'Contact Number is required' }, { len: 10, message: 'Phone number should be 10 digits' }]}
+                            >
+                                <Input placeholder="Contact Number" />
+                            </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Email ID<span style={{ color: 'red' }}> *</span></span>
-                                <Input placeholder="Email ID" value={employee.email_id} onChange={(e) => handleInputChange(e.target.value, 'email_id')} />
-                            </Flex>
+                            <Form.Item
+                                label="Email ID"
+                                name="email_id"
+                                rules={[
+                                    { required: true, message: 'Email ID is required' },
+                                    { type: 'email', message: 'Enter a valid email' },
+                                ]}
+                            >
+                                <Input placeholder="Email ID" />
+                            </Form.Item>
                         </Col>
                     </Row>
-                    <Row gutter={[24, 48]}>
+                    <Row gutter={[24, 0]}>
                         <Col span={24}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Address<span style={{ color: 'red' }}> *</span></span>
-                                <TextArea rows={4} value={employee.address} onChange={(e) => handleInputChange(e.target.value, 'address')} />
-                            </Flex>
+                            <Form.Item
+                                label="Address"
+                                name="address"
+                                rules={[{ required: true, message: 'Address is required' }]}
+                            >
+                                <TextArea rows={4} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={[24, 0]}>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Emergency Contact Name"
+                                name="emergency_contact_name"
+                            >
+                                <Input placeholder="Emergency Contact Name" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label="Emergency Contact Number"
+                                name="emergency_contact_number"
+                            >
+                                <Input placeholder="Emergency Contact Number" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={[24, 0]}>
+                        <Col span={12}>
+                            <Form.Item label="Father's Name" name="father_name">
+                                <Input placeholder="Father's Name" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item label="Mother's Name" name="mother_name">
+                                <Input placeholder="Mother's Name" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={[24, 0]}>
+                        <Col span={12}>
+                            <Form.Item label="Spouse's Name" name="spouse_name">
+                                <Input placeholder="Spouse's Name" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item label="Child 1 Name" name="child1_name">
+                                <Input placeholder="Child 1 Name" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={[24, 0]}>
+                        <Col span={12}>
+                            <Form.Item label="Child 2 Name" name="child2_name">
+                                <Input placeholder="Child 2 Name" />
+                            </Form.Item>
                         </Col>
                     </Row>
                 </Flex>
 
                 <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
-                    <Button disabled>Previous</Button>
-                    <Button type="primary" onClick={() => {
-                        console.log("Employee Submit: ", employee);
-                        handleSectionNavigation('next')
-                    }} icon={<SaveOutlined />}>
-                        Save & Next
-                    </Button>
+                    <Button htmlType="button" disabled>Previous</Button>
+                    <Flex gap={16}>
+                        {isEditMode && <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>}
+                        <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                            Save & Next
+                        </Button>
+                    </Flex>
                 </Flex>
-            </Flex>
-        </>
+            </Form>
+        </Flex>
     );
 };
 

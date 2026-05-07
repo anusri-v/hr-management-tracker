@@ -41,8 +41,9 @@ table employees {
 
 table compensation_details { 
   id int pk
-  employee_id text // employees.id reference
+  employee_id int // employees.id reference
   salary text // encrypt
+  salary_breakdown json {} // encrypt all fields
   effective_from timestampz
   effective_to timestampz
   created_at timestampz

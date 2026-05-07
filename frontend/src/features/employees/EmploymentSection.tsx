@@ -1,20 +1,9 @@
-import { Button, Col, DatePicker, Flex, Input, Radio, Row, Select } from "antd";
+import { Button, Col, DatePicker, Flex, Form, Input, message, Radio, Row, Select } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
-import dayjs from "dayjs";
-import type { Employee } from "./AddEmployee";
-
-const DOB_FORMAT = "YYYY-MM-DD";
-
-const departmentOptions = [
-    { label: 'Engineering', value: 'Engineering' },
-    { label: 'Product', value: 'Product' },
-    { label: 'Design', value: 'Design' },
-    { label: 'People Ops', value: 'People Ops' },
-    { label: 'Finance', value: 'Finance' },
-    { label: 'Marketing', value: 'Marketing' },
-    { label: 'Sales', value: 'Sales' },
-    { label: 'Operations', value: 'Operations' },
-];
+import dayjs, { Dayjs } from "dayjs";
+import type { Employee } from "../../utils/types/employee";
+import { API_URL } from "../../App";
+import { DATE_FORMAT, departmentOptions, workLocationOption } from "../../utils/constants/constants";
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -22,103 +11,160 @@ type BasicInformationSectionProps = {
     handleSectionNavigation: (dir: string) => void
 }
 
+type EmploymentFormValues = {
+    department: string;
+    designation: string;
+    // reporting_manager_id: string;
+    employment_type: string;
+    date_of_joining: Dayjs | null;
+    internal_transfer_date: Dayjs | null;
+    work_location: string;
+    expat_status: string | null;
+}
+
 const EmploymentSection = ({ employee, setEmployee, handleSectionNavigation }: BasicInformationSectionProps) => {
-    const handleInputChange = (value: string, field: string) => {
-        switch (field) {
-            case 'department':
-                setEmployee({ ...employee, department: value })
-                break;
-            case 'designation':
-                setEmployee({ ...employee, designation: value })
-                break;
-            case 'reporting_manager':
-                setEmployee({ ...employee, reporting_manager: value })
-                break;
-            case 'employment_type':
-                setEmployee({ ...employee, employment_type: value })
-                break;
-            case 'date_of_joining':
-                setEmployee({ ...employee, date_of_joining: value })
-                break;
-            case 'work_location':
-                setEmployee({ ...employee, work_location: value })
-                break;
-            default:
-                break;
+    const [form] = Form.useForm<EmploymentFormValues>();
+
+    const initialValues: EmploymentFormValues = {
+        department: employee.department ?? '',
+        designation: employee.designation ?? '',
+        // reporting_manager_id: employee.reporting_manager_id,
+        employment_type: employee.employment_type ?? '',
+        date_of_joining: employee.date_of_joining ? dayjs(employee.date_of_joining, DATE_FORMAT) : null,
+        internal_transfer_date: employee.internal_transfer_date ? dayjs(employee.internal_transfer_date, DATE_FORMAT) : null,
+        work_location: employee.work_location ?? '',
+        expat_status: employee.expat_status ?? 'native',
+    };
+
+    const syncFormToParent = (values: EmploymentFormValues) => {
+        setEmployee((prev) => ({
+            ...prev,
+            department: values.department,
+            designation: values.designation,
+            // reporting_manager_id: values.reporting_manager_id,
+            employment_type: values.employment_type,
+            date_of_joining: values.date_of_joining ? values.date_of_joining?.format(DATE_FORMAT) : '',
+            internal_transfer_date: values.internal_transfer_date ? values.internal_transfer_date.format(DATE_FORMAT) : null,
+            work_location: values.work_location,
+            expat_status: values.expat_status,
+        }));
+    };
+
+    async function handleEmployeeUpdate(values: EmploymentFormValues) {
+        const employeeInfo = {
+            department: values.department,
+            designation: values.designation,
+            // reporting_manager_id: values.reporting_manager_id,
+            employment_type: values.employment_type,
+            date_of_joining: values.date_of_joining ? values.date_of_joining.format(DATE_FORMAT) : '',
+            internal_transfer_date: values.internal_transfer_date ? values.internal_transfer_date.format(DATE_FORMAT) : null,
+            work_location: values.work_location,
+            expat_status: values.expat_status,
+        }
+
+        const url = `${API_URL}/employee/${employee.employee_id}`
+
+        try {
+            const res = await fetch(url, {
+                method: 'PATCH',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employeeInfo }),
+            })
+            const data = await res.json();
+
+            if (!data.success) {
+                message.error(data.message ?? 'Something went wrong')
+                return
+            }
+
+            message.success(data.message)
+            handleSectionNavigation('next')
+        } catch (e) {
+            console.error('Update failed: ', e)
+            message.error('Internal server error')
         }
     }
 
     return (
         <>
             <Flex vertical style={{ width: '100%' }}>
-                <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
-                    <Row gutter={[24, 48]}>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Department<span style={{ color: 'red' }}> *</span></span>
-                                <Select
-                                    placeholder="Select Department"
-                                    value={employee.department || undefined}
-                                    onChange={(value) => handleInputChange(value, 'department')}
-                                    options={departmentOptions}
-                                />
-                            </Flex>
-                        </Col>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Designation<span style={{ color: 'red' }}> *</span></span>
-                                <Input placeholder="Designation" value={employee.designation} onChange={(e) => handleInputChange(e.target.value, 'designation')} />
-                            </Flex>
-                        </Col>
-                    </Row>
-                    <Row gutter={[24, 48]}>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Reporting Manager<span style={{ color: 'red' }}> *</span></span>
-                                <Input placeholder="Reporting Manager" value={employee.reporting_manager} onChange={(e) => handleInputChange(e.target.value, 'reporting_manager')} />
-                            </Flex>
-                        </Col>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Employment Type<span style={{ color: 'red' }}> *</span></span>
-                                <Radio.Group value={employee.employment_type} onChange={(e) => handleInputChange(e.target.value, 'employment_type')}>
-                                    <Radio.Button value="full-time">Full Time</Radio.Button>
-                                    <Radio.Button value="intern">Intern</Radio.Button>
-                                    <Radio.Button value="contract">Contract</Radio.Button>
-                                </Radio.Group>
-                            </Flex>
-                        </Col>
-                    </Row>
-                    <Row gutter={[24, 48]}>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Date of Joining<span style={{ color: 'red' }}> *</span></span>
-                                <DatePicker
-                                    value={employee.date_of_joining ? dayjs(employee.date_of_joining, DOB_FORMAT) : null}
-                                    format={DOB_FORMAT}
-                                    onChange={(_, dateString) => handleInputChange(dateString as string, 'date_of_joining')}
-                                />
-                            </Flex>
-                        </Col>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Work Location<span style={{ color: 'red' }}> *</span></span>
-                                <Input placeholder="Work Location" value={employee.work_location} onChange={(e) => handleInputChange(e.target.value, 'work_location')} />
-                            </Flex>
-                        </Col>
-                    </Row>
-                </Flex>
+                <Form
+                    form={form}
+                    layout="vertical"
+                    initialValues={initialValues}
+                    onFinish={handleEmployeeUpdate}
+                    onValuesChange={(_, allValues) => syncFormToParent(allValues)}
+                    style={{ width: '100%' }}
+                >
+                    <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
+                        <Row gutter={[24, 48]}>
+                            <Col span={12}>
+                                <Form.Item label="Department" name={"department"} rules={[{ required: true, message: 'Department is required' }]}>
+                                    <Select placeholder="Select Department" options={departmentOptions} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item label="Designation" name={"designation"} rules={[{ required: true, message: 'Designation is required' }]}>
+                                    <Input placeholder="Designation" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={[24, 48]}>
+                            <Col span={12}>
+                                <Form.Item label="Reporting Manager" name={"reporting_manager_id"} >
+                                    <Input placeholder="Reporting Manager" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item label="Employment Type" name={"employment_type"} rules={[{ required: true, message: 'Employment Type is required' }]}>
+                                    <Radio.Group>
+                                        <Radio.Button value="full-time">Full Time</Radio.Button>
+                                        <Radio.Button value="intern">Intern</Radio.Button>
+                                        <Radio.Button value="contract">Contract</Radio.Button>
+                                    </Radio.Group>
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={[24, 48]}>
+                            <Col span={12}>
+                                <Form.Item label="Date of Joining" name={"date_of_joining"} rules={[{ required: true, message: 'Date of Joining is required' }]} >
+                                    <DatePicker format={DATE_FORMAT} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item label="Internal Transfer Date" name={"internal_transfer_date"} >
+                                    <DatePicker format={DATE_FORMAT} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={[24, 48]}>
+                            <Col span={12}>
+                                <Form.Item label="Expat Status" name={"expat_status"} >
+                                    <Radio.Group defaultValue={"native"}>
+                                        <Radio.Button value="native">Native</Radio.Button>
+                                        <Radio.Button value="expat">Expat</Radio.Button>
+                                    </Radio.Group>
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item label="Work Location" name={"work_location"} rules={[{ required: true, message: 'Work Location is required' }]} >
+                                    <Select placeholder="Select Work Location" options={workLocationOption} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                    </Flex>
 
-                <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
-                    <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
-                    <Button type="primary" onClick={() => {
-                        console.log("Employee Submit: ", employee);
-                        handleSectionNavigation('next')
-                    }} icon={<SaveOutlined />}>
-                        Save & Next
-                    </Button>
-                </Flex>
-
+                    <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
+                        <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
+                        <Flex gap={16}>
+                            <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>
+                            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                                Save & Next
+                            </Button>
+                        </Flex>
+                    </Flex>
+                </Form>
             </Flex>
         </>
     );

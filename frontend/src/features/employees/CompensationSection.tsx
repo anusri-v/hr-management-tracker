@@ -1,15 +1,9 @@
-import { Button, Col, Flex, Input, InputNumber, Row, Select } from "antd";
+import { Button, Col, Flex, Form, InputNumber, message, Row, Select } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
-import type { Employee } from "./AddEmployee";
-import { useState } from "react";
-
-const currencyOptions = [
-    { label: 'INR - Indian Rupee', value: 'inr' },
-    { label: 'QAR - Qatari Riyal', value: 'qar' },
-    { label: 'AED - UAE Dirham', value: 'aed' },
-    { label: 'BDT - Bangladeshi Taka', value: 'bdt' },
-    { label: 'USD - US Dollar', value: 'usd' },
-];
+import type { Employee } from "../../utils/types/employee";
+import { emptyCompensationDetails } from "../../utils/types/employee";
+import { CURRENCY_PREFIX, currencyOptions } from "../../utils/constants/constants";
+import { API_URL } from "../../App";
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -17,109 +11,102 @@ type BasicInformationSectionProps = {
     handleSectionNavigation: (dir: string) => void
 }
 
-const CompensationSection = ({ employee, setEmployee, handleSectionNavigation }: BasicInformationSectionProps) => {
-    const [currency, setCurrency] = useState("₹");
-    const handleInputChange = (value: string, field: string) => {
-        switch (field) {
-            case 'currency':
-                setEmployee({ ...employee, currency: value })
-                handleCurrencyPrefix(value)
-                break;
-            case 'ctc':
-                setEmployee({ ...employee, ctc: value })
-                break;
-            case 'bank_name':
-                setEmployee({ ...employee, bank_name: value })
-                break;
-            case 'account_number':
-                setEmployee({ ...employee, account_number: value })
-                break;
-            case 'ifsc_code':
-                setEmployee({ ...employee, ifsc_code: value })
-                break;
-            default:
-                break;
-        }
-    }
+type CompensationFormValues = {
+    currency: string;
+    salary_ctc: string;
+}
 
-    const handleCurrencyPrefix = (currency: string) => {
-        switch (currency) {
-            case 'inr':
-                setCurrency('₹')
-                break;
-            case 'qar':
-                setCurrency('﷼')
-                break;
-            case 'aed':
-                setCurrency('د.إ')
-                break;
-            case 'bdt':
-                setCurrency('৳')
-                break;
-            case 'usd':
-                setCurrency('$')
-                break;
-            default:
-                break;
+const CompensationSection = ({ employee, setEmployee, handleSectionNavigation }: BasicInformationSectionProps) => {
+    const [form] = Form.useForm<CompensationFormValues>();
+
+    const selectedCurrency = Form.useWatch('currency', form);
+    const prefix = CURRENCY_PREFIX[selectedCurrency] ?? '';
+
+    const compensation = employee.compensation_details[0];
+
+    const initialValues: CompensationFormValues = {
+        currency: compensation?.currency ?? '',
+        salary_ctc: compensation?.salary_ctc ?? '',
+    };
+
+    const syncFormToParent = (values: CompensationFormValues) => {
+        setEmployee((prev) => ({
+            ...prev,
+            compensation_details: [
+                {
+                    ...(prev.compensation_details[0] ?? emptyCompensationDetails()),
+                    currency: values.currency,
+                    salary_ctc: values.salary_ctc,
+                },
+                ...prev.compensation_details.slice(1),
+            ],
+        }));
+    };
+
+    async function handleCompensationUpdate(values: CompensationFormValues) {
+        const url = `${API_URL}/employee/${employee.employee_id}/compensation`
+
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    currency: values.currency,
+                    salary_ctc: values.salary_ctc,
+                }),
+            })
+            const data = await res.json();
+
+            if (!data.success) {
+                message.error(data.message ?? 'Something went wrong')
+                return
+            }
+
+            message.success(data.message)
+            handleSectionNavigation('next')
+        } catch (e) {
+            console.error('Update failed: ', e)
+            message.error('Internal server error')
         }
     }
 
     return (
         <>
             <Flex vertical style={{ width: '100%' }}>
-                <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
-                    <Row gutter={[24, 48]}>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Currency<span style={{ color: 'red' }}> *</span></span>
-                                <Select
-                                    placeholder="Select Currency"
-                                    value={employee.currency || undefined}
-                                    onChange={(value) => handleInputChange(value, 'currency')}
-                                    options={currencyOptions}
-                                />
-                            </Flex>
-                        </Col>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Annual CTC<span style={{ color: 'red' }}> *</span></span>
-                                <InputNumber style={{ width: '100%' }} placeholder="0" prefix={currency} value={employee.ctc} onChange={(e) => handleInputChange(e || '', 'ctc')} />
-                            </Flex>
-                        </Col>
-                    </Row>
-                    <Row gutter={[24, 48]}>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Bank Name</span>
-                                <Input placeholder="Bank Name" value={employee.bank_name} onChange={(e) => handleInputChange(e.target.value, 'bank_name')} />
-                            </Flex>
-                        </Col>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Account Number</span>
-                                <Input placeholder="Account Number" value={employee.account_number} onChange={(e) => handleInputChange(e.target.value, 'account_number')} />
-                            </Flex>
-                        </Col>
-                    </Row>
-                    <Row gutter={[24, 48]}>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>IFSC Code</span>
-                                <Input placeholder="IFSC Code" value={employee.ifsc_code} onChange={(e) => handleInputChange(e.target.value, 'ifsc_code')} />
-                            </Flex>
-                        </Col>
-                    </Row>
-                </Flex>
+                <Form
+                    form={form}
+                    layout="vertical"
+                    initialValues={initialValues}
+                    onFinish={handleCompensationUpdate}
+                    onValuesChange={(_, allValues) => syncFormToParent(allValues)}
+                    style={{ width: '100%' }}
+                >
+                    <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
+                        <Row gutter={[24, 48]}>
+                            <Col span={12}>
+                                <Form.Item label="Currency" name={"currency"} rules={[{ required: true, message: 'Currency is required' }]}>
+                                    <Select placeholder="Select Currency" options={currencyOptions} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item label="Annual CTC" name={"salary_ctc"} rules={[{ required: true, message: 'Annual CTC is required' }]}>
+                                    <InputNumber style={{ width: '100%' }} placeholder="0" prefix={prefix} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                    </Flex>
 
-                <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
-                    <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
-                    <Button type="primary" onClick={() => {
-                        console.log("Employee Submit: ", employee);
-                        handleSectionNavigation('next')
-                    }} icon={<SaveOutlined />}>
-                        Save & Next
-                    </Button>
-                </Flex>
+                    <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
+                        <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
+                        <Flex gap={16}>
+                            <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>
+                            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                                Save & Next
+                            </Button>
+                        </Flex>
+                    </Flex>
+                </Form>
             </Flex>
         </>
     );

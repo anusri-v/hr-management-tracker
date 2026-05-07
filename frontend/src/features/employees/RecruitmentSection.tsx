@@ -1,9 +1,9 @@
-import { Button, Col, DatePicker, Flex, Input, Radio, Row } from "antd";
+import { Button, Col, DatePicker, Flex, Form, Input, message, Radio, Row } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
-import dayjs from "dayjs";
-import type { Employee } from "./AddEmployee";
-
-const DOB_FORMAT = "YYYY-MM-DD";
+import dayjs, { Dayjs } from "dayjs";
+import type { Employee } from "../../utils/types/employee";
+import { API_URL } from "../../App";
+import { DATE_FORMAT } from "../../utils/constants/constants";
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -11,82 +11,118 @@ type BasicInformationSectionProps = {
     handleSectionNavigation: (dir: string) => void
 }
 
+type RecruitmentFormValues = {
+    source_of_hire: string;
+    offer_letter_date: Dayjs | null;
+    interview_date: Dayjs | null;
+    interview_panel: string;
+}
+
 const RecruitmentSection = ({ employee, setEmployee, handleSectionNavigation }: BasicInformationSectionProps) => {
-    const handleInputChange = (value: string, field: string) => {
-        switch (field) {
-            case 'source_of_hire':
-                setEmployee({ ...employee, source_of_hire: value })
-                break;
-            case 'offer_letter_date':
-                setEmployee({ ...employee, offer_letter_date: value })
-                break;
-            case 'interview_date':
-                setEmployee({ ...employee, interview_date: value })
-                break;
-            case 'interview_panel':
-                setEmployee({ ...employee, interview_panel: value })
-                break;
-            default:
-                break;
+    const [form] = Form.useForm<RecruitmentFormValues>();
+
+    const initialValues: RecruitmentFormValues = {
+        source_of_hire: employee.source_of_hire ?? '',
+        offer_letter_date: employee.offer_letter_date ? dayjs(employee.offer_letter_date, DATE_FORMAT) : null,
+        interview_date: employee.interview_date ? dayjs(employee.interview_date, DATE_FORMAT) : null,
+        interview_panel: employee.interview_panel ?? '',
+    };
+
+    const syncFormToParent = (values: RecruitmentFormValues) => {
+        setEmployee((prev) => ({
+            ...prev,
+            source_of_hire: values.source_of_hire,
+            offer_letter_date: values.offer_letter_date ? values.offer_letter_date.format(DATE_FORMAT) : "",
+            interview_date: values.interview_date ? values.interview_date.format(DATE_FORMAT) : "",
+            interview_panel: values.interview_panel,
+        }));
+    };
+
+    async function handleEmployeeUpdate(values: RecruitmentFormValues) {
+        const employeeInfo = {
+            source_of_hire: values.source_of_hire,
+            offer_letter_date: values.offer_letter_date ? values.offer_letter_date.format(DATE_FORMAT) : "",
+            interview_date: values.interview_date ? values.interview_date.format(DATE_FORMAT) : "",
+            interview_panel: values.interview_panel,
+        }
+
+        const url = `${API_URL}/employee/${employee.employee_id}`
+
+        try {
+            const res = await fetch(url, {
+                method: 'PATCH',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employeeInfo }),
+            })
+            const data = await res.json();
+
+            if (!data.success) {
+                message.error(data.message ?? 'Something went wrong')
+                return
+            }
+
+            message.success(data.message)
+            handleSectionNavigation('next')
+        } catch (e) {
+            console.error('Update failed: ', e)
+            message.error('Internal server error')
         }
     }
 
     return (
         <>
             <Flex vertical style={{ width: '100%' }}>
-                <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
-                    <Row gutter={[24, 48]}>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Source of hire<span style={{ color: 'red' }}> *</span></span>
-                                <Radio.Group value={employee.source_of_hire} onChange={(e) => handleInputChange(e.target.value, 'source_of_hire')}>
-                                    <Radio.Button value="referral">Referral</Radio.Button>
-                                    <Radio.Button value="campus">Campus</Radio.Button>
-                                    <Radio.Button value="consultant">Consultant</Radio.Button>
-                                    <Radio.Button value="direct">Direct</Radio.Button>
-                                </Radio.Group>
-                            </Flex>
-                        </Col>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Offer Letter Date<span style={{ color: 'red' }}> *</span></span>
-                                <DatePicker
-                                    value={employee.offer_letter_date ? dayjs(employee.offer_letter_date, DOB_FORMAT) : null}
-                                    format={DOB_FORMAT}
-                                    onChange={(_, dateString) => handleInputChange(dateString as string, 'offer_letter_date')}
-                                />
-                            </Flex>
-                        </Col>
-                    </Row>
-                    <Row gutter={[24, 48]}>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Interview Date</span>
-                                <DatePicker
-                                    value={employee.interview_date ? dayjs(employee.interview_date, DOB_FORMAT) : null}
-                                    format={DOB_FORMAT}
-                                    onChange={(_, dateString) => handleInputChange(dateString as string, 'interview_date')}
-                                />
-                            </Flex>
-                        </Col>
-                        <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Interview Panel</span>
-                                <Input placeholder="Interview Panel" value={employee.interview_panel} onChange={(e) => handleInputChange(e.target.value, 'interview_panel')} />
-                            </Flex>
-                        </Col>
-                    </Row>
-                </Flex>
+                <Form
+                    form={form}
+                    layout="vertical"
+                    initialValues={initialValues}
+                    onFinish={handleEmployeeUpdate}
+                    onValuesChange={(_, allValues) => syncFormToParent(allValues)}
+                    style={{ width: '100%' }}
+                >
+                    <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
+                        <Row gutter={[24, 48]}>
+                            <Col span={12}>
+                                <Form.Item label="Source of Hire" name={"source_of_hire"} rules={[{ required: true, message: 'Source of Hire is required' }]}>
+                                    <Radio.Group>
+                                        <Radio.Button value="referral">Referral</Radio.Button>
+                                        <Radio.Button value="campus">Campus</Radio.Button>
+                                        <Radio.Button value="consultant">Consultant</Radio.Button>
+                                        <Radio.Button value="direct">Direct</Radio.Button>
+                                    </Radio.Group>
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item label="Offer Letter Date" name={"offer_letter_date"} rules={[{ required: true, message: 'Offer Letter Date is required' }]}>
+                                    <DatePicker format={DATE_FORMAT} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={[24, 48]}>
+                            <Col span={12}>
+                                <Form.Item label="Interview Date" name={"interview_date"} >
+                                    <DatePicker format={DATE_FORMAT} style={{ width: '100%' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item label="Interview Panel" name={"interview_panel"} >
+                                    <Input placeholder="Interview Panel" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                    </Flex>
 
-                <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
-                    <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
-                    <Button type="primary" onClick={() => {
-                        console.log("Employee Submit: ", employee);
-                        handleSectionNavigation('next')
-                    }} icon={<SaveOutlined />}>
-                        Save & Next
-                    </Button>
-                </Flex>
+                    <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
+                        <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
+                        <Flex gap={16}>
+                            <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>
+                            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                                Save & Next
+                            </Button>
+                        </Flex>
+                    </Flex>
+                </Form>
             </Flex>
         </>
     );
