@@ -4,6 +4,24 @@ const { Prisma } = require('@prisma/client');
 const router = express.Router();
 const prisma = require('../lib/prisma');
 
+router.get('/summary', async (req, res) => {
+    try {
+        const [total, active, resigned] = await Promise.all([
+            prisma.employee.count(),
+            prisma.employee.count({ where: { employment_status: 'active' } }),
+            prisma.employee.count({ where: { employment_status: 'resigned' } }),
+        ]);
+
+        res.status(200).json({
+            success: true,
+            summary: { total, active, resigned },
+        });
+    } catch (e) {
+        console.error('GET /employee/summary failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+})
+
 router.post('/:employee_id/compensation', async (req, res) => {
     const { employee_id } = req.params;
     const { currency, salary_ctc, breakdown, effective_from, effective_to } = req.body;
@@ -89,6 +107,57 @@ router.post('/:employee_id/statutory', async (req, res) => {
         res.status(500).json({ error: 'Internal server error', message: e.message });
     }
 })
+
+router.post('/:employee_id/exit_details', async (req, res) => {
+    const { employee_id } = req.params;
+    const { last_working_day, exit_reason, final_settlement_status } = req.body;
+
+    try {
+        const employee = await prisma.employee.findUnique({
+            where: { employee_id }
+        });
+
+        if (employee == null) {
+            return res.status(404).json({ success: false, message: "Employee not found" });
+        }
+
+        const existing = await prisma.exitDetails.findFirst({
+            where: { employee_id: employee.id },
+            orderBy: { id: 'desc' },
+        });
+
+        const exitDetails = existing
+            ? await prisma.exitDetails.update({
+                where: { id: existing.id },
+                data: {
+                    last_working_day: last_working_day ? new Date(last_working_day) : undefined,
+                    exit_reason,
+                    final_settlement_status,
+                },
+            })
+            : await prisma.exitDetails.create({
+                data: {
+                    employee_id: employee.id,
+                    last_working_day: last_working_day ? new Date(last_working_day) : undefined,
+                    exit_reason,
+                    final_settlement_status,
+                },
+            });
+
+        await prisma.employee.update({
+            where: { id: employee.id },
+            data: { employment_status: 'resigned' },
+        });
+
+        res.status(201).json({ success: true, exit_details: exitDetails, message: "Exit details updated successfully" });
+    } catch (e) {
+        console.error('POST /employee/:id/exit_details failed:', e.message);
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
 
 router.post('/', async (req, res) => {
     try {
@@ -197,7 +266,11 @@ router.get('/:employee_id', async (req, res) => {
                 compensation_details: {
                     orderBy: { created_at: 'desc' }
                 },
-                statutory_details: true
+                statutory_details: true,
+                exit_details: {
+                    orderBy: { id: 'desc' },
+                    take: 1,
+                },
             }
         })
 

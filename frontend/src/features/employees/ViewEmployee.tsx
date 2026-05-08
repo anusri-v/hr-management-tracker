@@ -11,11 +11,15 @@ import StatutoryTabContent from "./TabItems/StatutoryTabContent";
 import CompensationTabContent from "./TabItems/CompensationTabContent";
 import type { Employee } from "../../utils/types/employee";
 import ExpatStatusTag from "../../utils/components/ExpatStatusTag";
+import ResignationModal from "./ResignationModal";
+import ExitDetailsTabContent from "./TabItems/ExitDetailsTabContent";
 
 const ViewEmployee = () => {
     const navigate = useNavigate();
     const { employeeId } = useParams<{ employeeId: string }>();
     const [employee, setEmployee] = useState<Employee>()
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [activeTab, setActiveTab] = useState<string>('1');
 
     useEffect(() => {
         if (employeeId) handleGetEmployeeData();
@@ -38,6 +42,7 @@ const ViewEmployee = () => {
             }
 
             setEmployee({ ...data.employee })
+            if (data.employee.employment_status === 'resigned') setActiveTab('6');
             console.log("After set employee: ", employee, data);
 
             message.success(data.message)
@@ -75,14 +80,30 @@ const ViewEmployee = () => {
         }
     ];
 
+    if (employee?.employment_status === 'resigned') {
+        items.push({
+            key: '6',
+            label: 'Exit Details',
+            children: <ExitDetailsTabContent employee={employee} onUpdate={handleGetEmployeeData} />,
+        })
+    }
+
+    const handleModalOpen = () => {
+        setModalOpen(true);
+    }
+
+    const handleModalClose = () => {
+        setModalOpen(false);
+    }
+
     return (
         <>
             <Flex justify="space-between">
-            <Button type='text' icon={<ArrowLeftOutlined />} onClick={() => { navigate('/employees') }}>Back</Button>
-            <Flex gap={16}>
-            <Button type='default' danger icon={<LogoutOutlined />} >Mark as Resigned</Button>
-            <Button type='primary' icon={<EditOutlined />} onClick={() => { navigate(`/employees/edit/${employeeId}`)}} >Edit Details</Button>
-            </Flex>
+                <Button type='text' icon={<ArrowLeftOutlined />} onClick={() => { navigate('/employees') }}>Back</Button>
+                <Flex gap={16}>
+                    {employee?.employment_status !== 'resigned' && <Button type='default' onClick={() => handleModalOpen()} danger icon={<LogoutOutlined />} >Mark as Resigned</Button>}
+                    <Button type='primary' icon={<EditOutlined />} onClick={() => { navigate(`/employees/edit/${employeeId}`) }} >Edit Details</Button>
+                </Flex>
             </Flex>
 
             <Flex vertical style={{ background: 'white', marginTop: 24, borderRadius: 12, padding: '24px 48px', borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid', color: '#8893A0' }}>
@@ -110,7 +131,14 @@ const ViewEmployee = () => {
                         <span>{employee?.employee_id}</span></Flex>
                 </Flex>
             </Flex>
-            <Tabs defaultActiveKey="1" items={items} />
+            <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} />
+
+            <ResignationModal
+                open={modalOpen}
+                employee={employee}
+                onClose={handleModalClose}
+                onSuccess={handleGetEmployeeData}
+            />
         </>
     )
 }

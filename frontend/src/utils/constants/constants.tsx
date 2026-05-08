@@ -46,3 +46,12 @@ export const expatOptions = [
     { label: 'Native', value: 'native' },
     { label: 'Expat', value: 'expat' },
 ]
+
+export const exitReasons = [
+    { label: 'Better Opportunity', value: 'Better Opportunity' },
+    { label: 'Higher Studies', value: 'Higher Studies' },
+    { label: 'Personal Reasons', value: 'Personal Reasons' },
+    { label: 'Relocation', value: 'Relocation' },
+    { label: 'Performance', value: 'Performance' },
+    { label: 'Other', value: 'Other' },
+]
