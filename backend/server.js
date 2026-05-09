@@ -6,6 +6,7 @@ const prisma = require('./lib/prisma');
 const authRouter = require('./routes/auth');
 const employeeRouter = require('./routes/employee');
 const userRouter = require('./routes/user');
+const activityLogRouter = require('./routes/activityLog');
 const requireAuth = require('./middleware/requireAuth');
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(cookieParser());
 app.use('/auth', authRouter);
 app.use('/employee', employeeRouter);
 app.use('/users', userRouter);
+app.use('/activity-log', activityLogRouter);
 
 app.get('/me', requireAuth, async (req, res) => {
     const userRecord = await prisma.user.findUnique({

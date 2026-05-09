@@ -5,6 +5,7 @@ import { migrate as migrateEmployee } from './Employee'
 import { migrate as migrateCompensationDetails } from './CompensationDetails'
 import { migrate as migrateStatutoryDetails } from './StatutoryDetails'
 import { migrate as migrateExitDetails } from './ExitDetails'
+import { migrate as migrateActivityLog } from './ActivityLog'
 
 export interface ProgressReport {
   model: string
@@ -40,7 +41,8 @@ export type MigrationReport = {
   Employee: number,
   CompensationDetails: number,
   StatutoryDetails: number,
-  ExitDetails: number
+  ExitDetails: number,
+  ActivityLog: number
 }
 
 /**
@@ -51,6 +53,7 @@ export type MigrationReport = {
  * - CompensationDetails
  * - StatutoryDetails
  * - ExitDetails
+ * - ActivityLog
  *
  * @returns a dictionary of the number of processed records per model.
  */
@@ -62,10 +65,12 @@ export async function migrate(
   const processedCompensationDetails = await migrateCompensationDetails(client, reportProgress)
   const processedStatutoryDetails = await migrateStatutoryDetails(client, reportProgress)
   const processedExitDetails = await migrateExitDetails(client, reportProgress)
+  const processedActivityLog = await migrateActivityLog(client, reportProgress)
   return {
     Employee: processedEmployee,
     CompensationDetails: processedCompensationDetails,
     StatutoryDetails: processedStatutoryDetails,
-    ExitDetails: processedExitDetails
+    ExitDetails: processedExitDetails,
+    ActivityLog: processedActivityLog
   }
 }

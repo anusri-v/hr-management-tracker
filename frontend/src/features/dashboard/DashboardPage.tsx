@@ -1,10 +1,11 @@
 import { Flex, Button, Typography, Row, Col, message } from "antd";
-import { ArrowRightOutlined, BellOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, AuditOutlined, BellOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
 import { useEffect, useState } from "react";
 import RemindersContent from "../reminders/RemindersContent";
 import styles from './DashboardPage.module.css';
+import ActivityLogContent from "../activityLog/ActivityLogContent";
 
 const { Title } = Typography;
 
@@ -85,27 +86,46 @@ const DashboardPage = () => {
           </Col>
         </Row>
 
-        <Flex vertical className={styles.remindersPanel}>
-          <Flex justify="space-between" align="center" className={styles.remindersHeader}>
-            <Flex gap={8}>
-              <BellOutlined className={styles.bellIcon} />
-              <Flex vertical gap={8} className={styles.remindersInfo}>
-                <span className={styles.remindersTitle}>Reminders</span>
-                Upcoming events, birthdays, and milestones
+        <Flex>
+          <Flex vertical className={styles.remindersPanel}>
+            <Flex justify="space-between" align="center" className={styles.remindersHeader}>
+              <Flex gap={8}>
+                <BellOutlined className={styles.bellIcon} />
+                <Flex vertical gap={8} className={styles.remindersInfo}>
+                  <span className={styles.remindersTitle}>Reminders</span>
+                  Upcoming events, birthdays, and milestones
+                </Flex>
+              </Flex>
+              <Flex gap={8}>
+                <Button type="link" onClick={() => { navigate('/reminders') }}>
+                  <span className={styles.viewAllText}>
+                    View all
+                  </span>
+
+                  <ArrowRightOutlined />
+                </Button>
               </Flex>
             </Flex>
-            <Flex gap={8}>
-              <Button type="link" onClick={() => { navigate('/reminders') }}>
-              <span className={styles.viewAllText}>
-                View all
-              </span>
-
-              <ArrowRightOutlined />
-              </Button>
+            <Flex>
+              <RemindersContent />
             </Flex>
           </Flex>
-          <Flex>
-            <RemindersContent />
+
+          <Flex vertical className={styles.activityPanel}>
+            <Flex justify="space-between" align="center" className={styles.remindersHeader}>
+              <Flex gap={8}>
+                <AuditOutlined className={styles.bellIcon} />
+                <Flex vertical gap={8} className={styles.remindersInfo}>
+                  <span className={styles.remindersTitle}>Recent activity</span>
+                  Latest changes in the portal
+                </Flex>
+              </Flex>
+              <Button type="link" onClick={() => { navigate('/activity-log') }}>
+                <span className={styles.viewAllText}>View all</span>
+                <ArrowRightOutlined />
+              </Button>
+            </Flex>
+            <ActivityLogContent dashboardMode />
           </Flex>
         </Flex>
       </Flex>

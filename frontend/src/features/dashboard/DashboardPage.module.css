@@ -27,10 +27,21 @@
 }
 
 .remindersPanel {
-  width: 60%;
+  width: 57%;
   margin-top: 24px;
   border-radius: 16px;
   background: white;
+  border: 1px solid #E6EAEE;
+}
+
+.activityPanel {
+  width: 43%;
+  margin-top: 24px;
+  margin-left: 16px;
+  border-radius: 16px;
+  background: white;
+  border: 1px solid #E6EAEE;
+  overflow: hidden;
 }
 
 .remindersHeader {

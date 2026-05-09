@@ -5,6 +5,7 @@ const prisma = require('../lib/prisma');
 const requireAuth = require('../middleware/requireAuth');
 const { USER_STATUS } = require('../constants/userStatus');
 const { sendAccessApprovedEmail, sendAccessRevokedEmail } = require('../lib/mailer');
+const { logActivity } = require('../lib/activityLog');
 
 // Valid status transitions
 const ALLOWED_TRANSITIONS = {
@@ -82,10 +83,24 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
             sendAccessApprovedEmail({ userName: user.name, userEmail: user.email }).catch(err =>
                 console.error('Failed to send access approved email:', err.message)
             );
+            logActivity({
+                actorId: actor.id,
+                action: 'ACCESS_GRANTED',
+                entityType: 'user',
+                entityId: id,
+                description: `Granted access to ${user.name || user.email} (${user.email})`,
+            });
         } else if (newStatus === USER_STATUS.REVOKED) {
             sendAccessRevokedEmail({ userName: user.name, userEmail: user.email }).catch(err =>
                 console.error('Failed to send access revoked email:', err.message)
             );
+            logActivity({
+                actorId: actor.id,
+                action: 'ACCESS_REVOKED',
+                entityType: 'user',
+                entityId: id,
+                description: `Revoked access from ${user.name || user.email} (${user.email})`,
+            });
         }
 
         res.json({ user: updated });

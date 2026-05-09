@@ -3,6 +3,8 @@ const { Prisma } = require('@prisma/client');
 
 const router = express.Router();
 const prisma = require('../lib/prisma');
+const requireAuth = require('../middleware/requireAuth');
+const { logActivity } = require('../lib/activityLog');
 
 router.get('/summary', async (req, res) => {
     try {
@@ -211,7 +213,7 @@ router.post('/:employee_id/statutory', async (req, res) => {
     }
 })
 
-router.post('/:employee_id/exit_details', async (req, res) => {
+router.post('/:employee_id/exit_details', requireAuth, async (req, res) => {
     const { employee_id } = req.params;
     const { last_working_day, exit_reason, final_settlement_status } = req.body;
 
@@ -252,6 +254,17 @@ router.post('/:employee_id/exit_details', async (req, res) => {
             data: { employment_status: 'resigned' },
         });
 
+        const actor = await prisma.user.findUnique({ where: { google_sub: req.user.uid }, select: { id: true } });
+        if (actor) {
+            logActivity({
+                actorId: actor.id,
+                action: 'EMPLOYEE_RESIGNED',
+                entityType: 'employee',
+                entityId: employee_id,
+                description: `Marked ${employee.full_name} (${employee_id}) as resigned`,
+            });
+        }
+
         res.status(201).json({ success: true, exit_details: exitDetails, message: "Exit details updated successfully" });
     } catch (e) {
         console.error('POST /employee/:id/exit_details failed:', e.message);
@@ -262,7 +275,7 @@ router.post('/:employee_id/exit_details', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { employeeInfo } = req.body
         const {
@@ -293,6 +306,17 @@ router.post('/', async (req, res) => {
             },
         });
 
+        const actor = await prisma.user.findUnique({ where: { google_sub: req.user.uid }, select: { id: true } });
+        if (actor) {
+            logActivity({
+                actorId: actor.id,
+                action: 'EMPLOYEE_ADDED',
+                entityType: 'employee',
+                entityId: employee_id,
+                description: `Added employee ${full_name} (${employee_id})`,
+            });
+        }
+
         res.status(201).json({ success: true, employee: employee, message: "Employee created successfully" });
     } catch (e) {
         console.error('POST /employee failed:', e.message);
@@ -307,7 +331,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.patch('/:employee_id', async (req, res) => {
+router.patch('/:employee_id', requireAuth, async (req, res) => {
     const { employee_id } = req.params;
     const { employeeInfo } = req.body;
 
@@ -339,6 +363,17 @@ router.patch('/:employee_id', async (req, res) => {
                 internal_transfer_date: employeeInfo.internal_transfer_date,
             }
         })
+
+        const actor = await prisma.user.findUnique({ where: { google_sub: req.user.uid }, select: { id: true } });
+        if (actor) {
+            logActivity({
+                actorId: actor.id,
+                action: 'EMPLOYEE_EDITED',
+                entityType: 'employee',
+                entityId: employee_id,
+                description: `Edited employee ${updatedUser.full_name} (${employee_id})`,
+            });
+        }
 
         res.status(200).json({ success: true, employee: updatedUser, message: "Employee details stored successfully" });
     } catch (e) {

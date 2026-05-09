@@ -1,4 +1,3 @@
-import { StrictMode } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(relativeTime)
@@ -16,12 +15,10 @@ if (!clientId) {
 
 createRoot(document.getElementById('root')!).render(
   <ConfigProvider theme={{ token: { colorPrimary: '#3CB5B0' } }}>
-    <StrictMode>
-      <GoogleOAuthProvider clientId={clientId}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </GoogleOAuthProvider>
-    </StrictMode>
+    <GoogleOAuthProvider clientId={clientId}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   </ConfigProvider>,
 )
