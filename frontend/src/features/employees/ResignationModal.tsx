@@ -2,7 +2,7 @@ import { Button, DatePicker, Flex, Form, message, Modal, Radio, Select, Upload }
 import { UploadOutlined } from "@ant-design/icons";
 import { type Dayjs } from "dayjs";
 import dayjs from "dayjs";
-import { API_URL } from "../../App";
+import apiClient from "../../utils/apiClient";
 import type { Employee } from "../../utils/types/employee";
 import { DATE_FORMAT, exitReasons } from "../../utils/constants/constants";
 
@@ -39,17 +39,14 @@ const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
         if (!employee?.employee_id) return;
 
         try {
-            const res = await fetch(`${API_URL}/employee/${employee.employee_id}/exit_details`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            const data = await apiClient.post<{ success: boolean; message: string }>(
+                `/employee/${employee.employee_id}/exit_details`,
+                {
                     last_working_day: values.last_working_day?.format(DATE_FORMAT) ?? null,
                     exit_reason: values.exit_reason,
                     final_settlement_status: values.settlement_status,
-                }),
-            });
-            const data = await res.json();
+                },
+            );
             if (!data.success) {
                 message.error(data.message ?? 'Something went wrong');
                 return;

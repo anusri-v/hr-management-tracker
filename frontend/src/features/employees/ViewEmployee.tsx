@@ -1,5 +1,5 @@
 import { Button, Flex, message, Tabs, type TabsProps } from "antd"
-import { API_URL } from "../../App"
+import apiClient from "../../utils/apiClient"
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeftOutlined, TeamOutlined, PushpinOutlined, CalendarOutlined, EditOutlined, LogoutOutlined } from '@ant-design/icons';
@@ -27,15 +27,8 @@ const ViewEmployee = () => {
     }, [employeeId])
 
     async function handleGetEmployeeData() {
-        const url = `${API_URL}/employee/${employeeId}`
-
         try {
-            const res = await fetch(url, {
-                method: 'GET',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-            })
-            const data = await res.json();
+            const data = await apiClient.get<{ success: boolean; message: string; employee: Employee }>(`/employee/${employeeId}`);
             if (!data.success) {
                 message.error(data.message ?? 'Something went wrong')
                 return

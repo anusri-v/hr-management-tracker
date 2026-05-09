@@ -22,6 +22,107 @@ router.get('/summary', async (req, res) => {
     }
 })
 
+const REMINDER_WINDOW_DAYS = 30;
+
+function withinWindow(date, today, windowDays) {
+    const end = new Date(today);
+    end.setDate(end.getDate() + windowDays);
+    return date >= today && date <= end;
+}
+
+// For yearly-recurring events: find the next occurrence of month/day on or after today
+function nextYearlyOccurrence(storedDate, today) {
+    const thisYear = new Date(today.getFullYear(), storedDate.getMonth(), storedDate.getDate());
+    if (thisYear >= today) return thisYear;
+    return new Date(today.getFullYear() + 1, storedDate.getMonth(), storedDate.getDate());
+}
+
+// GET /employee/reminders
+router.get('/reminders', async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const windowEnd = new Date(today);
+        windowEnd.setDate(windowEnd.getDate() + REMINDER_WINDOW_DAYS);
+
+        // 3-month milestone: joined between (today - 90d) and (today - 60d) so the 90-day mark lands in the window
+        const milestoneJoinStart = new Date(today);
+        milestoneJoinStart.setDate(milestoneJoinStart.getDate() - 90);
+        const milestoneJoinEnd = new Date(today);
+        milestoneJoinEnd.setDate(milestoneJoinEnd.getDate() - 60);
+
+        const [allActive, exitingEmployees, milestoneEmployees] = await Promise.all([
+            // Fetch active employees for birthday + anniversary checks
+            prisma.employee.findMany({
+                where: { employment_status: 'active' },
+                select: { employee_id: true, full_name: true, date_of_birth: true, date_of_joining: true },
+            }),
+            // Last working days: resigned employees with LWD in window
+            prisma.exitDetails.findMany({
+                where: {
+                    last_working_day: { gte: today, lte: windowEnd },
+                },
+                include: {
+                    employee: { select: { employee_id: true, full_name: true } },
+                },
+            }),
+            // 3-month milestone: active employees whose join date puts their 90-day mark in the window
+            prisma.employee.findMany({
+                where: {
+                    employment_status: 'active',
+                    date_of_joining: { gte: milestoneJoinStart, lte: milestoneJoinEnd },
+                },
+                select: { employee_id: true, full_name: true, date_of_joining: true },
+            }),
+        ]);
+
+        const reminders = [];
+
+        for (const emp of allActive) {
+            if (emp.date_of_birth) {
+                const next = nextYearlyOccurrence(new Date(emp.date_of_birth), today);
+                if (withinWindow(next, today, REMINDER_WINDOW_DAYS)) {
+                    reminders.push({ type: 'birthday', employee_id: emp.employee_id, full_name: emp.full_name, date: next });
+                }
+            }
+            if (emp.date_of_joining) {
+                const next = nextYearlyOccurrence(new Date(emp.date_of_joining), today);
+                const joinYear = new Date(emp.date_of_joining).getFullYear();
+                if (next.getFullYear() > joinYear && withinWindow(next, today, REMINDER_WINDOW_DAYS)) {
+                    reminders.push({ type: 'work_anniversary', employee_id: emp.employee_id, full_name: emp.full_name, date: next });
+                }
+            }
+        }
+
+        for (const exit of exitingEmployees) {
+            reminders.push({
+                type: 'last_working_day',
+                employee_id: exit.employee.employee_id,
+                full_name: exit.employee.full_name,
+                date: exit.last_working_day,
+            });
+        }
+
+        for (const emp of milestoneEmployees) {
+            const milestone = new Date(emp.date_of_joining);
+            milestone.setDate(milestone.getDate() + 90);
+            reminders.push({ type: 'three_month_milestone', employee_id: emp.employee_id, full_name: emp.full_name, date: milestone });
+        }
+
+        reminders.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        res.json({
+            success: true,
+            reminders,
+            total: reminders.length,
+        });
+    } catch (e) {
+        console.error('GET /employee/reminders failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
+
 router.post('/:employee_id/compensation', async (req, res) => {
     const { employee_id } = req.params;
     const { currency, salary_ctc, breakdown, effective_from, effective_to } = req.body;

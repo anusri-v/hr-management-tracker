@@ -3,7 +3,7 @@ import { SaveOutlined } from "@ant-design/icons";
 import type { Employee } from "../../utils/types/employee";
 import { emptyCompensationDetails } from "../../utils/types/employee";
 import { CURRENCY_PREFIX, currencyOptions } from "../../utils/constants/constants";
-import { API_URL } from "../../App";
+import apiClient from "../../utils/apiClient";
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -44,19 +44,11 @@ const CompensationSection = ({ employee, setEmployee, handleSectionNavigation }:
     };
 
     async function handleCompensationUpdate(values: CompensationFormValues) {
-        const url = `${API_URL}/employee/${employee.employee_id}/compensation`
-
         try {
-            const res = await fetch(url, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    currency: values.currency,
-                    salary_ctc: values.salary_ctc,
-                }),
-            })
-            const data = await res.json();
+            const data = await apiClient.post<{ success: boolean; message: string }>(
+                `/employee/${employee.employee_id}/compensation`,
+                { currency: values.currency, salary_ctc: values.salary_ctc },
+            );
 
             if (!data.success) {
                 message.error(data.message ?? 'Something went wrong')

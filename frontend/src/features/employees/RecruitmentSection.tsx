@@ -2,7 +2,7 @@ import { Button, Col, DatePicker, Flex, Form, Input, message, Radio, Row } from 
 import { SaveOutlined } from "@ant-design/icons";
 import dayjs, { Dayjs } from "dayjs";
 import type { Employee } from "../../utils/types/employee";
-import { API_URL } from "../../App";
+import apiClient from "../../utils/apiClient";
 import { DATE_FORMAT } from "../../utils/constants/constants";
 
 type BasicInformationSectionProps = {
@@ -46,16 +46,8 @@ const RecruitmentSection = ({ employee, setEmployee, handleSectionNavigation }: 
             interview_panel: values.interview_panel,
         }
 
-        const url = `${API_URL}/employee/${employee.employee_id}`
-
         try {
-            const res = await fetch(url, {
-                method: 'PATCH',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employeeInfo }),
-            })
-            const data = await res.json();
+            const data = await apiClient.patch<{ success: boolean; message: string }>(`/employee/${employee.employee_id}`, { employeeInfo });
 
             if (!data.success) {
                 message.error(data.message ?? 'Something went wrong')

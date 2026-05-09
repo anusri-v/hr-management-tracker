@@ -1,7 +1,7 @@
 import { Button, Flex, Input, message, Select, Table, Tag, Typography } from "antd";
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
-import { API_URL } from "../../App";
+import apiClient from "../../utils/apiClient";
 import { useEffect, useState } from "react";
 import { departmentOptions, expatOptions, statusOptions } from "../../utils/constants/constants";
 import EmploymentStatusTag from "../../utils/components/EmploymentStatusTag";
@@ -38,14 +38,9 @@ const EmployeesPage = () => {
       if (expatStatus) params.set('expat_status', expatStatus);
 
       const qs = params.toString();
-      const url = `${API_URL}/employee${qs ? `?${qs}` : ''}`
+      const path = `/employee${qs ? `?${qs}` : ''}`;
 
-      const res = await fetch(url, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      })
-
-      const data = await res.json();
+      const data = await apiClient.get<{ employees: [] }>(path);
       console.log("GET employees result", data);
       setEmployeeDate(data.employees);
 

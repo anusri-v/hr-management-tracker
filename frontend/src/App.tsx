@@ -13,8 +13,7 @@ import ActivityLogPage from './features/activityLog/ActivityLogPage'
 import AddEmployee from './features/employees/AddEmployee'
 import ViewEmployee from './features/employees/ViewEmployee'
 import EditEmployee from './features/employees/EditEmployee'
-
-export const API_URL = 'http://localhost:3000'
+import apiClient, { ApiError } from './utils/apiClient'
 
 export type User = {
   id: number
@@ -37,8 +36,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`${API_URL}/me`, { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+    apiClient.get<{ user: User }>('/me')
       .then((data) => setUser(data.user))
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
@@ -46,30 +44,22 @@ function App() {
 
   async function handleSuccess(credential: string) {
     setError(null)
-    const res = await fetch(`${API_URL}/auth/google`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential }),
-    })
-
-    if (res.status === 403) {
-      const data = await res.json().catch(() => ({}))
-      setError(data.detail || 'Your account is not authorized to access this app.')
-      return
-    }
-
-    if (!res.ok) {
+    try {
+      await apiClient.post('/auth/google', { credential })
+      const me = await apiClient.get<{ user: User }>('/me')
+      setUser(me.user)
+    } catch (e: unknown) {
+      if (e instanceof ApiError && e.status === 403) {
+        const body = e.body as { detail?: string }
+        setError(body?.detail || 'Your account is not authorized to access this app.')
+        return
+      }
       setError('Sign-in failed')
-      return
     }
-
-    const me = await fetch(`${API_URL}/me`, { credentials: 'include' }).then((r) => r.json())
-    setUser(me.user)
   }
 
   async function handleLogout() {
-    await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' })
+    await apiClient.post('/auth/logout')
     googleLogout()
     setUser(null)
   }

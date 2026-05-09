@@ -9,7 +9,7 @@ import StatutorySection from "./StatutorySection";
 import OnboardingSection from "./OnboardingSection";
 import { useNavigate, useParams } from "react-router-dom";
 import { emptyEmployee, type Employee } from "../../utils/types/employee";
-import { API_URL } from "../../App";
+import apiClient from "../../utils/apiClient";
 
 const items = [
     { title: 'Part 1', content: 'Basic Information' },
@@ -35,16 +35,9 @@ const EditEmployee = () => {
     }, [employeeId])
 
     async function handleGetEmployeeData() {
-        const url = `${API_URL}/employee/${employeeId}`
-
         try {
-            const res = await fetch(url, {
-                method: 'GET',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-            })
-            const data = await res.json();
-            console.log("[EditEmployee API response]", { status: res.status, data })
+            const data = await apiClient.get<{ success: boolean; message: string; employee: Employee }>(`/employee/${employeeId}`);
+            console.log("[EditEmployee API response]", data)
 
             if (!data.success) {
                 message.error(data.message ?? 'Something went wrong')

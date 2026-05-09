@@ -3,7 +3,7 @@ import TextArea from "antd/es/input/TextArea";
 import { SaveOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import type { Employee } from "../../utils/types/employee";
-import { API_URL } from "../../App";
+import apiClient from "../../utils/apiClient";
 import { DATE_FORMAT } from "../../utils/constants/constants";
 
 type BasicInformationSectionProps = {
@@ -93,19 +93,10 @@ const BasicInformationSection = ({ employee, setEmployee, handleSectionNavigatio
             },
         };
 
-        const url = isEditMode
-            ? `${API_URL}/employee/${employee.employee_id}`
-            : `${API_URL}/employee`;
-        const method = isEditMode ? 'PATCH' : 'POST';
-
         try {
-            const res = await fetch(url, {
-                method,
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employeeInfo }),
-            });
-            const data = await res.json();
+            const data = await (isEditMode
+                ? apiClient.patch<{ success: boolean; message: string; employee: Employee }>(`/employee/${employee.employee_id}`, { employeeInfo })
+                : apiClient.post<{ success: boolean; message: string; employee: Employee }>('/employee', { employeeInfo }));
 
             if (!data.success) {
                 message.error(data.message ?? 'Something went wrong');

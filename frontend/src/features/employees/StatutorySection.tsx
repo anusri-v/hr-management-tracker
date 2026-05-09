@@ -2,7 +2,7 @@ import { Button, Col, Flex, Form, Input, message, Row } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import type { Employee } from "../../utils/types/employee";
 import { emptyStatutoryDetails } from "../../utils/types/employee";
-import { API_URL } from "../../App";
+import apiClient from "../../utils/apiClient";
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -52,23 +52,18 @@ const StatutorySection = ({ employee, setEmployee, handleSectionNavigation }: Ba
     };
 
     async function handleStatutoryUpdate(values: StatutoryFormValues) {
-        const url = `${API_URL}/employee/${employee.employee_id}/statutory`
-
         try {
-            const res = await fetch(url, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            const data = await apiClient.post<{ success: boolean; message: string }>(
+                `/employee/${employee.employee_id}/statutory`,
+                {
                     bank_name: values.bank_name,
                     account_number: values.account_number,
                     ifsc_code: values.ifsc_code,
                     pan_number: values.pan_number,
                     aadhar_number: values.aadhar_number,
-                    pf_number: values.pf_number
-                }),
-            })
-            const data = await res.json();
+                    pf_number: values.pf_number,
+                },
+            );
 
             if (!data.success) {
                 message.error(data.message ?? 'Something went wrong')

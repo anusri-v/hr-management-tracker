@@ -1,7 +1,7 @@
 import { Flex, Button, Typography, Row, Col, message } from "antd";
 import { PlusOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
-import { API_URL } from "../../App";
+import apiClient from "../../utils/apiClient";
 import { useEffect, useState } from "react";
 
 const { Title } = Typography;
@@ -27,16 +27,8 @@ const DashboardPage = () => {
   }, [])
 
   async function handleEmployeeSummary() {
-    const url = `${API_URL}/employee/summary`
-
     try {
-      const res = await fetch(url, {
-        method: 'GET',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      const data = await res.json();
+      const data = await apiClient.get<{ success: boolean; message: string; summary: { total: number; active: number; resigned: number } }>('/employee/summary');
       if (!data.success) {
         message.error(data.message ?? 'Something went wrong')
         return
