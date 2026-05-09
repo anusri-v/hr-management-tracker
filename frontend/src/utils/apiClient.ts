@@ -32,12 +32,24 @@ async function request<T = unknown>(
     return data as T;
 }
 
+async function postFile<T = unknown>(path: string, formData: FormData): Promise<T> {
+    const res = await fetch(`${BASE_URL}${path}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new ApiError(res.status, data);
+    return data as T;
+}
+
 const apiClient = {
-    get:    <T = unknown>(path: string) => request<T>('GET', path),
-    post:   <T = unknown>(path: string, body?: unknown) => request<T>('POST', path, body),
-    patch:  <T = unknown>(path: string, body?: unknown) => request<T>('PATCH', path, body),
-    put:    <T = unknown>(path: string, body?: unknown) => request<T>('PUT', path, body),
-    delete: <T = unknown>(path: string) => request<T>('DELETE', path),
+    get:      <T = unknown>(path: string) => request<T>('GET', path),
+    post:     <T = unknown>(path: string, body?: unknown) => request<T>('POST', path, body),
+    patch:    <T = unknown>(path: string, body?: unknown) => request<T>('PATCH', path, body),
+    put:      <T = unknown>(path: string, body?: unknown) => request<T>('PUT', path, body),
+    delete:   <T = unknown>(path: string) => request<T>('DELETE', path),
+    postFile: <T = unknown>(path: string, formData: FormData) => postFile<T>(path, formData),
 };
 
 export default apiClient;

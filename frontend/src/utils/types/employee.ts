@@ -56,6 +56,8 @@ export type Employee = {
     department: string | null;
     designation: string | null;
     reporting_manager_id: number | null;
+    reporting_manager_name?: string | null;
+    reporting_manager_employee_id?: string | null;
     employment_type: string | null;
     date_of_joining: string | null;
     internal_transfer_date: string | null;

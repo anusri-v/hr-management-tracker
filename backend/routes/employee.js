@@ -1,10 +1,14 @@
 const express = require('express');
 const { Prisma } = require('@prisma/client');
+const multer = require('multer');
+const ExcelJS = require('exceljs');
 
 const router = express.Router();
 const prisma = require('../lib/prisma');
 const requireAuth = require('../middleware/requireAuth');
 const { logActivity } = require('../lib/activityLog');
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/summary', async (req, res) => {
     try {
@@ -32,14 +36,12 @@ function withinWindow(date, today, windowDays) {
     return date >= today && date <= end;
 }
 
-// For yearly-recurring events: find the next occurrence of month/day on or after today
 function nextYearlyOccurrence(storedDate, today) {
     const thisYear = new Date(today.getFullYear(), storedDate.getMonth(), storedDate.getDate());
     if (thisYear >= today) return thisYear;
     return new Date(today.getFullYear() + 1, storedDate.getMonth(), storedDate.getDate());
 }
 
-// GET /employee/reminders
 router.get('/reminders', async (req, res) => {
     try {
         const today = new Date();
@@ -48,19 +50,16 @@ router.get('/reminders', async (req, res) => {
         const windowEnd = new Date(today);
         windowEnd.setDate(windowEnd.getDate() + REMINDER_WINDOW_DAYS);
 
-        // 3-month milestone: joined between (today - 90d) and (today - 60d) so the 90-day mark lands in the window
         const milestoneJoinStart = new Date(today);
         milestoneJoinStart.setDate(milestoneJoinStart.getDate() - 90);
         const milestoneJoinEnd = new Date(today);
         milestoneJoinEnd.setDate(milestoneJoinEnd.getDate() - 60);
 
         const [allActive, exitingEmployees, milestoneEmployees] = await Promise.all([
-            // Fetch active employees for birthday + anniversary checks
             prisma.employee.findMany({
                 where: { employment_status: 'active' },
                 select: { employee_id: true, full_name: true, date_of_birth: true, date_of_joining: true },
             }),
-            // Last working days: resigned employees with LWD in window
             prisma.exitDetails.findMany({
                 where: {
                     last_working_day: { gte: today, lte: windowEnd },
@@ -69,7 +68,6 @@ router.get('/reminders', async (req, res) => {
                     employee: { select: { employee_id: true, full_name: true } },
                 },
             }),
-            // 3-month milestone: active employees whose join date puts their 90-day mark in the window
             prisma.employee.findMany({
                 where: {
                     employment_status: 'active',
@@ -127,6 +125,287 @@ router.get('/reminders', async (req, res) => {
     }
 });
 
+// GET /employee/bulk-export — export all employees as xlsx
+router.get('/bulk-export', async (req, res) => {
+    try {
+        const employees = await prisma.employee.findMany({
+            orderBy: { employee_id: 'asc' },
+        });
+
+        // Build a map of internal id -> employee_id string for reporting manager lookup
+        const idToEmpId = {};
+        for (const emp of employees) {
+            idToEmpId[emp.id] = emp.employee_id;
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Employees');
+
+        sheet.columns = [
+            { header: 'employee_id', key: 'employee_id', width: 15 },
+            { header: 'full_name', key: 'full_name', width: 25 },
+            { header: 'gender', key: 'gender', width: 10 },
+            { header: 'date_of_birth', key: 'date_of_birth', width: 15 },
+            { header: 'contact_number', key: 'contact_number', width: 18 },
+            { header: 'email_id', key: 'email_id', width: 25 },
+            { header: 'address', key: 'address', width: 35 },
+            { header: 'department', key: 'department', width: 20 },
+            { header: 'designation', key: 'designation', width: 20 },
+            { header: 'employment_type', key: 'employment_type', width: 15 },
+            { header: 'date_of_joining', key: 'date_of_joining', width: 15 },
+            { header: 'reporting_manager', key: 'reporting_manager', width: 15 },
+            { header: 'work_location', key: 'work_location', width: 15 },
+            { header: 'expat_status', key: 'expat_status', width: 12 },
+            { header: 'employment_status', key: 'employment_status', width: 15 },
+            { header: 'source_of_hire', key: 'source_of_hire', width: 15 },
+            { header: 'talentx_id', key: 'talentx_id', width: 15 },
+            { header: 'emergency_contact_name', key: 'emergency_contact_name', width: 22 },
+            { header: 'emergency_contact_phone', key: 'emergency_contact_phone', width: 22 },
+        ];
+
+        for (const emp of employees) {
+            sheet.addRow({
+                employee_id: emp.employee_id,
+                full_name: emp.full_name,
+                gender: emp.gender,
+                date_of_birth: emp.date_of_birth ? emp.date_of_birth.toISOString().split('T')[0] : '',
+                contact_number: emp.contact_number,
+                email_id: emp.email_id,
+                address: emp.address,
+                department: emp.department ?? '',
+                designation: emp.designation ?? '',
+                employment_type: emp.employment_type ?? '',
+                date_of_joining: emp.date_of_joining ? emp.date_of_joining.toISOString().split('T')[0] : '',
+                reporting_manager: emp.reporting_manager_id ? (idToEmpId[emp.reporting_manager_id] ?? '') : '',
+                work_location: emp.work_location ?? '',
+                expat_status: emp.expat_status ?? '',
+                employment_status: emp.employment_status ?? '',
+                source_of_hire: emp.source_of_hire ?? '',
+                talentx_id: emp.talentx_id ?? '',
+                emergency_contact_name: emp.emergency_contact_name ?? '',
+                emergency_contact_phone: emp.emergency_contact_phone ?? '',
+            });
+        }
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="employees.xlsx"');
+
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (e) {
+        console.error('GET /employee/bulk-export failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
+
+// POST /employee/bulk-import — import employees from xlsx
+const MANDATORY_FIELDS = ['employee_id', 'full_name', 'gender', 'date_of_birth', 'contact_number', 'email_id', 'address', 'department', 'designation', 'employment_type', 'date_of_joining'];
+
+function normalizeHeader(h) {
+    return String(h).toLowerCase().replace(/[\s_\-]+/g, '');
+}
+
+const HEADER_MAP = {
+    'employeeid': 'employee_id',
+    'empid': 'employee_id',
+    'fullname': 'full_name',
+    'name': 'full_name',
+    'gender': 'gender',
+    'dateofbirth': 'date_of_birth',
+    'dob': 'date_of_birth',
+    'birthdate': 'date_of_birth',
+    'contactnumber': 'contact_number',
+    'contact': 'contact_number',
+    'phone': 'contact_number',
+    'mobilenumber': 'contact_number',
+    'mobile': 'contact_number',
+    'emailid': 'email_id',
+    'email': 'email_id',
+    'address': 'address',
+    'department': 'department',
+    'dept': 'department',
+    'designation': 'designation',
+    'role': 'designation',
+    'jobtitle': 'designation',
+    'employmenttype': 'employment_type',
+    'emptype': 'employment_type',
+    'type': 'employment_type',
+    'dateofjoining': 'date_of_joining',
+    'doj': 'date_of_joining',
+    'joiningdate': 'date_of_joining',
+    'dateofjoin': 'date_of_joining',
+    'reportingmanager': 'reporting_manager_emp_id',
+    'reportingmanagerid': 'reporting_manager_emp_id',
+    'manager': 'reporting_manager_emp_id',
+    'managerid': 'reporting_manager_emp_id',
+    'worklocation': 'work_location',
+    'location': 'work_location',
+    'expatstatus': 'expat_status',
+    'sourceofhire': 'source_of_hire',
+    'source': 'source_of_hire',
+    'talentxid': 'talentx_id',
+    'emergencycontactname': 'emergency_contact_name',
+    'emergencycontactphone': 'emergency_contact_phone',
+    'emergencyphone': 'emergency_contact_phone',
+};
+
+function parseDateValue(val) {
+    if (!val) return undefined;
+    if (val instanceof Date) return val;
+    // Excel numeric serial date
+    if (typeof val === 'number') {
+        const excelEpoch = new Date(1899, 11, 30);
+        return new Date(excelEpoch.getTime() + val * 86400000);
+    }
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? undefined : d;
+}
+
+router.post('/bulk-import', requireAuth, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(req.file.buffer);
+
+        const sheet = workbook.worksheets[0];
+        if (!sheet) {
+            return res.status(400).json({ success: false, message: 'xlsx file has no worksheets' });
+        }
+
+        // Read headers from row 1
+        const headerRow = sheet.getRow(1);
+        const headers = [];
+        headerRow.eachCell({ includeEmpty: false }, (cell) => {
+            const normalized = normalizeHeader(cell.value);
+            headers.push(HEADER_MAP[normalized] || normalized);
+        });
+
+        // Parse all data rows
+        const rows = [];
+        sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+            if (rowNumber === 1) return;
+            const obj = {};
+            row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                const field = headers[colNumber - 1];
+                if (field) obj[field] = cell.value;
+            });
+            rows.push({ rowNumber, data: obj });
+        });
+
+        if (rows.length === 0) {
+            return res.status(400).json({ success: false, message: 'No data rows found in file' });
+        }
+
+        // Validate and separate valid/invalid rows
+        const validRows = [];
+        const errors = [];
+
+        for (const { rowNumber, data } of rows) {
+            const missing = MANDATORY_FIELDS.filter(f => !data[f] && data[f] !== 0);
+            if (missing.length > 0) {
+                errors.push({ row: rowNumber, message: `Missing mandatory fields: ${missing.join(', ')}` });
+                continue;
+            }
+            validRows.push({ rowNumber, data });
+        }
+
+        if (validRows.length === 0) {
+            return res.status(400).json({ success: false, message: 'No valid rows to import', errors });
+        }
+
+        // Pass 1: create all valid employees (without reporting_manager_id)
+        const created = [];
+        const createErrors = [];
+
+        for (const { rowNumber, data } of validRows) {
+            try {
+                const emp = await prisma.employee.create({
+                    data: {
+                        employee_id: String(data.employee_id).trim(),
+                        full_name: String(data.full_name).trim(),
+                        gender: String(data.gender).trim().toLowerCase(),
+                        date_of_birth: parseDateValue(data.date_of_birth),
+                        contact_number: String(data.contact_number).trim(),
+                        email_id: String(data.email_id).trim(),
+                        address: String(data.address).trim(),
+                        department: data.department ? String(data.department).trim() : undefined,
+                        designation: data.designation ? String(data.designation).trim() : undefined,
+                        employment_type: data.employment_type ? String(data.employment_type).trim().toLowerCase() : undefined,
+                        date_of_joining: data.date_of_joining ? parseDateValue(data.date_of_joining) : undefined,
+                        work_location: data.work_location ? String(data.work_location).trim() : undefined,
+                        expat_status: data.expat_status ? String(data.expat_status).trim().toLowerCase() : 'native',
+                        source_of_hire: data.source_of_hire ? String(data.source_of_hire).trim() : undefined,
+                        talentx_id: data.talentx_id ? String(data.talentx_id).trim() : undefined,
+                        emergency_contact_name: data.emergency_contact_name ? String(data.emergency_contact_name).trim() : undefined,
+                        emergency_contact_phone: data.emergency_contact_phone ? String(data.emergency_contact_phone).trim() : undefined,
+                    },
+                });
+                created.push({ rowNumber, employee_id: emp.employee_id, internalId: emp.id, reporting_manager_emp_id: data.reporting_manager_emp_id });
+            } catch (e) {
+                if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+                    createErrors.push({ row: rowNumber, message: `Employee ID "${data.employee_id}" already exists` });
+                } else {
+                    createErrors.push({ row: rowNumber, message: e.message });
+                }
+            }
+        }
+
+        // Pass 2: resolve and apply reporting manager IDs
+        const rowsNeedingManager = created.filter(r => r.reporting_manager_emp_id);
+
+        if (rowsNeedingManager.length > 0) {
+            // Build set of unique manager employee_ids to look up
+            const managerEmpIds = [...new Set(rowsNeedingManager.map(r => String(r.reporting_manager_emp_id).trim()))];
+
+            const managers = await prisma.employee.findMany({
+                where: { employee_id: { in: managerEmpIds } },
+                select: { id: true, employee_id: true },
+            });
+
+            const managerMap = {};
+            for (const m of managers) {
+                managerMap[m.employee_id] = m.id;
+            }
+
+            for (const row of rowsNeedingManager) {
+                const mgr_emp_id = String(row.reporting_manager_emp_id).trim();
+                const managerId = managerMap[mgr_emp_id];
+                if (managerId) {
+                    await prisma.employee.update({
+                        where: { id: row.internalId },
+                        data: { reporting_manager_id: managerId },
+                    });
+                }
+            }
+        }
+
+        const actor = await prisma.user.findUnique({ where: { google_sub: req.user.uid }, select: { id: true } });
+        if (actor) {
+            logActivity({
+                actorId: actor.id,
+                action: 'BULK_IMPORT',
+                entityType: 'employee',
+                entityId: 'bulk',
+                description: `Bulk imported ${created.length} employees`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Import complete: ${created.length} created, ${errors.length + createErrors.length} failed`,
+            created: created.length,
+            failed: errors.length + createErrors.length,
+            errors: [...errors, ...createErrors],
+        });
+    } catch (e) {
+        console.error('POST /employee/bulk-import failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
+
 router.post('/:employee_id/compensation', async (req, res) => {
     const { employee_id } = req.params;
     const { currency, salary_ctc, breakdown, effective_from, effective_to } = req.body;
@@ -165,7 +444,6 @@ router.post('/:employee_id/compensation', async (req, res) => {
     } catch (e) {
         console.error('GET /employee/:id failed:', e.message);
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code == 'P2025') {
-            const target = Array.isArray(e.meta?.target) ? e.meta.target.join(', ') : e.meta?.target;
             return res.status(409).json({ success: false, message: 'Employee not found' })
         }
         res.status(500).json({ error: 'Internal server error', message: e.message });
@@ -206,7 +484,6 @@ router.post('/:employee_id/statutory', async (req, res) => {
     } catch (e) {
         console.error('GET /employee/:id failed:', e.message);
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code == 'P2025') {
-            const target = Array.isArray(e.meta?.target) ? e.meta.target.join(', ') : e.meta?.target;
             return res.status(409).json({ success: false, message: 'Employee not found' })
         }
         res.status(500).json({ error: 'Internal server error', message: e.message });
@@ -288,8 +565,18 @@ router.post('/', requireAuth, async (req, res) => {
             address,
             emergency_contact_name,
             emergency_contact_phone,
-            family_members
+            family_members,
+            reporting_manager_employee_id,
         } = employeeInfo;
+
+        let reporting_manager_id = undefined;
+        if (reporting_manager_employee_id) {
+            const manager = await prisma.employee.findUnique({
+                where: { employee_id: reporting_manager_employee_id },
+                select: { id: true },
+            });
+            if (manager) reporting_manager_id = manager.id;
+        }
 
         const employee = await prisma.employee.create({
             data: {
@@ -302,7 +589,8 @@ router.post('/', requireAuth, async (req, res) => {
                 address,
                 emergency_contact_name,
                 emergency_contact_phone,
-                family_members
+                family_members,
+                reporting_manager_id,
             },
         });
 
@@ -336,33 +624,50 @@ router.patch('/:employee_id', requireAuth, async (req, res) => {
     const { employeeInfo } = req.body;
 
     try {
-        const updatedUser = await prisma.employee.update({
-            where: {
-                employee_id: employee_id
-            },
-            data: {
-                full_name: employeeInfo.full_name,
-                gender: employeeInfo.gender,
-                date_of_birth: employeeInfo.date_of_birth ? new Date(employeeInfo.date_of_birth) : undefined,
-                contact_number: employeeInfo.contact_number,
-                email_id: employeeInfo.email_id,
-                address: employeeInfo.address,
-                department: employeeInfo.department,
-                designation: employeeInfo.designation,
-                employment_type: employeeInfo.employment_type,
-                date_of_joining: employeeInfo.date_of_joining ? new Date(employeeInfo.date_of_joining) : undefined,
-                work_location: employeeInfo.work_location,
-                source_of_hire: employeeInfo.source_of_hire,
-                offer_letter_date: employeeInfo.offer_letter_date ? new Date(employeeInfo.offer_letter_date) : undefined,
-                interview_date: employeeInfo.interview_date ? new Date(employeeInfo.interview_date) : undefined,
-                interview_panel: employeeInfo.interview_panel,
-                emergency_contact_name: employeeInfo.emergency_contact_name,
-                emergency_contact_phone: employeeInfo.emergency_contact_phone,
-                family_members: employeeInfo.family_members,
-                expat_status: employeeInfo.expat_status,
-                internal_transfer_date: employeeInfo.internal_transfer_date,
+        let reporting_manager_id = undefined;
+        if (employeeInfo.reporting_manager_employee_id !== undefined) {
+            if (employeeInfo.reporting_manager_employee_id) {
+                const manager = await prisma.employee.findUnique({
+                    where: { employee_id: employeeInfo.reporting_manager_employee_id },
+                    select: { id: true },
+                });
+                reporting_manager_id = manager ? manager.id : null;
+            } else {
+                reporting_manager_id = null;
             }
-        })
+        }
+
+        const updateData = {
+            full_name: employeeInfo.full_name,
+            gender: employeeInfo.gender,
+            date_of_birth: employeeInfo.date_of_birth ? new Date(employeeInfo.date_of_birth) : undefined,
+            contact_number: employeeInfo.contact_number,
+            email_id: employeeInfo.email_id,
+            address: employeeInfo.address,
+            department: employeeInfo.department,
+            designation: employeeInfo.designation,
+            employment_type: employeeInfo.employment_type,
+            date_of_joining: employeeInfo.date_of_joining ? new Date(employeeInfo.date_of_joining) : undefined,
+            work_location: employeeInfo.work_location,
+            source_of_hire: employeeInfo.source_of_hire,
+            offer_letter_date: employeeInfo.offer_letter_date ? new Date(employeeInfo.offer_letter_date) : undefined,
+            interview_date: employeeInfo.interview_date ? new Date(employeeInfo.interview_date) : undefined,
+            interview_panel: employeeInfo.interview_panel,
+            emergency_contact_name: employeeInfo.emergency_contact_name,
+            emergency_contact_phone: employeeInfo.emergency_contact_phone,
+            family_members: employeeInfo.family_members,
+            expat_status: employeeInfo.expat_status,
+            internal_transfer_date: employeeInfo.internal_transfer_date,
+        };
+
+        if (reporting_manager_id !== undefined) {
+            updateData.reporting_manager_id = reporting_manager_id;
+        }
+
+        const updatedUser = await prisma.employee.update({
+            where: { employee_id },
+            data: updateData,
+        });
 
         const actor = await prisma.user.findUnique({ where: { google_sub: req.user.uid }, select: { id: true } });
         if (actor) {
@@ -385,7 +690,6 @@ router.patch('/:employee_id', requireAuth, async (req, res) => {
             }
             return res.status(409).json({ message: `Duplicate value for: ${target}` });
         } else if (e instanceof Prisma.PrismaClientKnownRequestError && e.code == 'P2025') {
-            const target = Array.isArray(e.meta?.target) ? e.meta.target.join(', ') : e.meta?.target;
             return res.status(409).json({ success: false, message: 'Employee not found' })
         }
         res.status(500).json({ error: 'Internal server error', detail: e.message });
@@ -397,9 +701,7 @@ router.get('/:employee_id', async (req, res) => {
 
     try {
         const employee = await prisma.employee.findUnique({
-            where: {
-                employee_id
-            },
+            where: { employee_id },
             include: {
                 compensation_details: {
                     orderBy: { created_at: 'desc' }
@@ -417,11 +719,27 @@ router.get('/:employee_id', async (req, res) => {
             return
         }
 
-        res.status(201).json({ success: true, employee: employee, message: "Employee details retrieved successfully" });
+        let reporting_manager_name = null;
+        let reporting_manager_employee_id = null;
+        if (employee.reporting_manager_id) {
+            const manager = await prisma.employee.findUnique({
+                where: { id: employee.reporting_manager_id },
+                select: { full_name: true, employee_id: true },
+            });
+            if (manager) {
+                reporting_manager_name = manager.full_name;
+                reporting_manager_employee_id = manager.employee_id;
+            }
+        }
+
+        res.status(201).json({
+            success: true,
+            employee: { ...employee, reporting_manager_name, reporting_manager_employee_id },
+            message: "Employee details retrieved successfully",
+        });
     } catch (e) {
         console.error('GET /employee/:id failed:', e.message);
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code == 'P2025') {
-            const target = Array.isArray(e.meta?.target) ? e.meta.target.join(', ') : e.meta?.target;
             return res.status(409).json({ success: false, message: 'Employee not found' })
         }
         res.status(500).json({ error: 'Internal server error', message: e.message });
@@ -472,4 +790,3 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
-

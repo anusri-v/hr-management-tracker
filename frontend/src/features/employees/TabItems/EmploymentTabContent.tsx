@@ -30,7 +30,7 @@ const EmploymentTabContent = ({ employee }: EmploymentTabContentType) => {
                     <Col span={12}>
                         <Flex vertical>
                             <span className={shared.fieldLabel}>Reporting Manager</span>
-                            <span className={shared.capitalize}>{employee?.reporting_manager_id}</span>
+                            <span>{employee?.reporting_manager_name ?? '—'}</span>
                         </Flex>
                     </Col>
                     <Col span={12}>
