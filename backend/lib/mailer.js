@@ -20,4 +20,22 @@ async function sendAccessRequestEmail({ userName, userEmail }) {
     });
 }
 
-module.exports = { sendAccessRequestEmail };
+async function sendAccessApprovedEmail({ userName, userEmail }) {
+    await transporter.sendMail({
+        from: process.env.MAIL_USER,
+        to: userEmail,
+        subject: 'Your Access Has Been Approved - Employee Management',
+        text: `Hi ${userName},\n\nYour access to the Employee Management System has been approved. You can now log in at http://localhost:5173.\n\nWelcome aboard!`,
+    });
+}
+
+async function sendAccessRevokedEmail({ userName, userEmail }) {
+    await transporter.sendMail({
+        from: process.env.MAIL_USER,
+        to: userEmail,
+        subject: 'Your Access Has Been Revoked - Employee Management',
+        text: `Hi ${userName},\n\nYour access to the Employee Management System has been revoked. If you believe this is a mistake, please contact your administrator.`,
+    });
+}
+
+module.exports = { sendAccessRequestEmail, sendAccessApprovedEmail, sendAccessRevokedEmail };

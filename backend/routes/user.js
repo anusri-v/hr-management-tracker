@@ -4,6 +4,7 @@ const router = express.Router();
 const prisma = require('../lib/prisma');
 const requireAuth = require('../middleware/requireAuth');
 const { USER_STATUS } = require('../constants/userStatus');
+const { sendAccessApprovedEmail, sendAccessRevokedEmail } = require('../lib/mailer');
 
 // Valid status transitions
 const ALLOWED_TRANSITIONS = {
@@ -76,6 +77,17 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
         }
 
         const updated = await prisma.user.update({ where: { id }, data: updateData });
+
+        if (newStatus === USER_STATUS.ACTIVE) {
+            sendAccessApprovedEmail({ userName: user.name, userEmail: user.email }).catch(err =>
+                console.error('Failed to send access approved email:', err.message)
+            );
+        } else if (newStatus === USER_STATUS.REVOKED) {
+            sendAccessRevokedEmail({ userName: user.name, userEmail: user.email }).catch(err =>
+                console.error('Failed to send access revoked email:', err.message)
+            );
+        }
+
         res.json({ user: updated });
     } catch (e) {
         console.error('PATCH /users/:id/status failed:', e.message);
