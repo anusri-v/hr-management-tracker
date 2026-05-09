@@ -3,6 +3,8 @@ import type { Employee } from "../../../utils/types/employee";
 import dayjs from 'dayjs';
 import { useState } from "react";
 import ResignationModal from "../ResignationModal";
+import shared from '../../../utils/styles/shared.module.css';
+import styles from './ExitDetailsTabContent.module.css';
 
 type ExitDetailsTabContentType = {
     employee: Employee | undefined;
@@ -33,42 +35,42 @@ const ExitDetailsTabContent = ({ employee, onUpdate }: ExitDetailsTabContentType
 
     return (
         <>
-            <Flex vertical style={{ background: '#FCEEEA', borderWidth: 1, borderStyle: 'solid', borderRadius: 10, borderColor: '#E55958', padding: 20 }}>
-                <span style={{ textTransform: 'uppercase', letterSpacing: 1, color: '#E55958', fontWeight: 'bold', fontSize: 12, padding: '12px 0px' }}>Serving notice</span>
+            <Flex vertical className={styles.exitBanner}>
+                <span className={styles.exitBannerLabel}>Serving notice</span>
 
-                <span style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}><span style={{ color: '#E55958' }}>{daysUntilLastWorkingDate}</span> days until last working day</span>
+                <span className={styles.exitBannerHeading}><span className={styles.exitHighlight}>{daysUntilLastWorkingDate}</span> days until last working day</span>
                 <Progress percent={percent} strokeColor={"#E55958"} showInfo={false} />
-                <Flex justify='space-between' style={{ marginTop: 16 }}>
+                <Flex justify='space-between' className={styles.exitBannerDates}>
                     <Flex vertical>
-                        <span style={{ color: "#8893A0", textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.75 }}>Resigned</span>
-                        <span style={{ fontSize: 12, fontWeight: 'bold' }}>{resignedDateStr}</span>
+                        <span className={shared.fieldLabelSpaced}>Resigned</span>
+                        <span className={styles.smallBold}>{resignedDateStr}</span>
                     </Flex>
 
                     <Flex vertical>
-                        <span style={{ color: "#8893A0", textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.75 }}>Last Working Day</span>
-                        <span style={{ fontSize: 12, fontWeight: 'bold' }}>{lastWorkingDateStr}</span>
+                        <span className={shared.fieldLabelSpaced}>Last Working Day</span>
+                        <span className={styles.smallBold}>{lastWorkingDateStr}</span>
                     </Flex>
                 </Flex>
 
-                <Flex justify='space-between' style={{ background: '#FEF9F7', padding: 16, marginTop: 16, borderColor: '#FEF9F8', borderRadius: 8, borderStyle: 'solid', borderWidth: 1 }}>
+                <Flex justify='space-between' className={styles.exitInfoBox}>
                     <Flex vertical>
-                        <span style={{ color: "#8893A0", textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.75 }}>Last Working Day</span>
-                        <span style={{ fontSize: 12, fontWeight: 'bold' }}>{lastWorkingDateStr}</span>
+                        <span className={shared.fieldLabelSpaced}>Last Working Day</span>
+                        <span className={styles.smallBold}>{lastWorkingDateStr}</span>
                     </Flex>
 
                     <Flex vertical>
-                        <span style={{ color: "#8893A0", textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.75 }}>Exit reason</span>
-                        <span style={{ fontSize: 12, fontWeight: 'bold' }}>{exitDetails?.exit_reason}</span>
+                        <span className={shared.fieldLabelSpaced}>Exit reason</span>
+                        <span className={styles.smallBold}>{exitDetails?.exit_reason}</span>
                     </Flex>
 
                     <Flex vertical>
-                        <span style={{ color: "#8893A0", textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.75 }}>Notice period</span>
-                        <span style={{ fontSize: 12, fontWeight: 'bold' }}>{noticePeriod} Days</span>
+                        <span className={shared.fieldLabelSpaced}>Notice period</span>
+                        <span className={styles.smallBold}>{noticePeriod} Days</span>
                     </Flex>
 
                     <Flex vertical>
-                        <span style={{ color: "#8893A0", textTransform: 'uppercase', fontSize: 12, letterSpacing: 0.75 }}>Full & Final Settlement Status</span>
-                        <span style={{ fontSize: 12, fontWeight: 'bold', textTransform: 'capitalize' }}>{exitDetails?.final_settlement_status}</span>
+                        <span className={shared.fieldLabelSpaced}>Full & Final Settlement Status</span>
+                        <span className={styles.smallBoldCapitalize}>{exitDetails?.final_settlement_status}</span>
                     </Flex>
 
                     <Button onClick={() => handleModalOpen()}>Edit</Button>

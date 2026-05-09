@@ -1,0 +1,26 @@
+.reminderRow {
+  background: #FFFFFF;
+  padding: 16px;
+}
+
+.reminderIconBox {
+  border-radius: 8px;
+}
+
+.reminderIcon {
+  font-size: 22px;
+  padding: 16px;
+}
+
+.reminderInfo {
+  margin-left: 16px;
+}
+
+.reminderHeading {
+  font-weight: bold;
+}
+
+.reminderSubtitle {
+  color: #8893A0;
+  font-size: 12px;
+}

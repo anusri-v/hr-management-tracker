@@ -1,4 +1,4 @@
-import { Button, Flex, Input, message, Select, Table, Tag, Typography } from "antd";
+import { Button, Flex, Input, message, Select, Table, Typography } from "antd";
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { departmentOptions, expatOptions, statusOptions } from "../../utils/constants/constants";
 import EmploymentStatusTag from "../../utils/components/EmploymentStatusTag";
 import ExpatStatusTag from "../../utils/components/ExpatStatusTag";
+import styles from './EmployeesPage.module.css';
 
 const { Title } = Typography
 
@@ -56,7 +57,7 @@ const EmployeesPage = () => {
       dataIndex: 'employee_id',
       key: 'employee_id',
       render: (employee_id: string) => {
-        return <Button type='link' style={{ color: '#3CB5B0' }} onClick={() => navigate(`/employees/view/${employee_id}`)}>
+        return <Button type='link' className={styles.employeeIdLink} onClick={() => navigate(`/employees/view/${employee_id}`)}>
           {employee_id}
         </Button>
       }
@@ -105,21 +106,21 @@ const EmployeesPage = () => {
   return (
     <>
       <Flex justify="space-between" align='baseline'>
-        <Title level={3} style={{ fontWeight: 'bold' }}>Employees</Title>
+        <Title level={3} className={styles.pageTitle}>Employees</Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => { navigate('/employees/add') }}>Add Employee</Button>
       </Flex>
 
-      <Flex gap={8} style={{ marginBottom: 16, marginTop: 16 }}>
+      <Flex gap={8} className={styles.filterBar}>
         <Input
           placeholder="Search by Employee ID or Name"
           prefix={<SearchOutlined />}
-          style={{ width: 320 }}
+          className={styles.searchInput}
           allowClear
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <Select
-          style={{ width: 200 }}
+          className={styles.filterSelect}
           placeholder="Status"
           options={statusOptions}
           allowClear
@@ -127,7 +128,7 @@ const EmployeesPage = () => {
           onChange={(val) => setStatus(val)}
         />
         <Select
-          style={{ width: 200 }}
+          className={styles.filterSelect}
           placeholder="Department"
           options={departmentOptions}
           allowClear
@@ -135,7 +136,7 @@ const EmployeesPage = () => {
           onChange={(val) => setDepartment(val)}
         />
         <Select
-          style={{ width: 200 }}
+          className={styles.filterSelect}
           placeholder="Expat Status"
           options={expatOptions}
           allowClear

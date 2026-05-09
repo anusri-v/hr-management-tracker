@@ -10,6 +10,7 @@ import OnboardingSection from "./OnboardingSection";
 import { useNavigate, useParams } from "react-router-dom";
 import { emptyEmployee, type Employee } from "../../utils/types/employee";
 import apiClient from "../../utils/apiClient";
+import styles from './EditEmployee.module.css';
 
 const items = [
     { title: 'Part 1', content: 'Basic Information' },
@@ -87,7 +88,7 @@ const EditEmployee = () => {
     }
 
     if (loading) {
-        return <Flex justify="center" align="center" style={{ width: '100%', padding: 48 }}><Spin /></Flex>
+        return <Flex justify="center" align="center" className={styles.loadingWrapper}><Spin /></Flex>
     }
 
     return (

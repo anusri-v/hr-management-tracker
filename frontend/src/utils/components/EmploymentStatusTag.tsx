@@ -1,4 +1,5 @@
 import { Tag } from "antd"
+import shared from '../styles/shared.module.css';
 
 type EmploymentStatusTagType = {
     status: string
@@ -11,7 +12,7 @@ const EmploymentStatusTag = ({ status }: EmploymentStatusTagType) => {
     } else if (status === 'resigned') {
         color = "red"
     }
-    return <Tag color={color} variant='outlined'><span style={{ textTransform: 'capitalize' }}>{status}</span></Tag>
+    return <Tag color={color} variant='outlined'><span className={shared.capitalize}>{status}</span></Tag>
 }
 
 export default EmploymentStatusTag;

@@ -1,8 +1,10 @@
 import { Flex, Button, Typography, Row, Col, message } from "antd";
-import { PlusOutlined, UserOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, BellOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
 import { useEffect, useState } from "react";
+import RemindersContent from "../reminders/RemindersContent";
+import styles from './DashboardPage.module.css';
 
 const { Title } = Typography;
 
@@ -23,7 +25,7 @@ const DashboardPage = () => {
   useEffect(() => {
     handleEmployeeSummary()
     console.log("Employee Summary: ", employeeSummary);
-    
+
   }, [])
 
   async function handleEmployeeSummary() {
@@ -49,39 +51,63 @@ const DashboardPage = () => {
     <>
       <Flex vertical>
         <Flex justify="space-between" align='baseline'>
-          <Title level={3} style={{ fontWeight: 'bold' }}>Dashboard</Title>
+          <Title level={3} className={styles.pageTitle}>Dashboard</Title>
           <Flex gap={8}>
             <Button icon={<UserOutlined />} onClick={() => { navigate('/employees') }} >View Employees</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => { navigate('/employees/add') }}>Add Employee</Button>
           </Flex>
         </Flex>
 
-        <Row gutter={16} style={{ marginTop: 16 }}>
+        <Row gutter={16} className={styles.statsRow}>
           <Col className="gutter-row" span={6}>
-            <Flex vertical style={{ background: '#FFFFFF', padding: 16, borderRadius: 8, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
-              <span style={{ textTransform: 'uppercase', fontSize: 12, color: '#8893A0', letterSpacing: 1 }}>Total Employees</span>
-              <span style={{ fontSize: 24, fontWeight: 'bold', marginTop: 8 }}>{employeeSummary.totalEmployees}</span>
+            <Flex vertical className={styles.statCard}>
+              <span className={styles.statLabel}>Total Employees</span>
+              <span className={styles.statValue}>{employeeSummary.totalEmployees}</span>
             </Flex>
           </Col>
           <Col className="gutter-row" span={6}>
-            <Flex vertical style={{ background: '#FFFFFF', padding: 16, borderRadius: 8, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
-              <span style={{ textTransform: 'uppercase', fontSize: 12, color: '#8893A0', letterSpacing: 1 }}>Active</span>
-              <span style={{ fontSize: 24, fontWeight: 'bold', marginTop: 8 }}>{employeeSummary.activeEmployees}</span>
+            <Flex vertical className={styles.statCard}>
+              <span className={styles.statLabel}>Active</span>
+              <span className={styles.statValue}>{employeeSummary.activeEmployees}</span>
             </Flex>
           </Col>
           <Col className="gutter-row" span={6}>
-            <Flex vertical style={{ background: '#FFFFFF', padding: 16, borderRadius: 8, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
-              <span style={{ textTransform: 'uppercase', fontSize: 12, color: '#8893A0', letterSpacing: 1 }}>On Resignation</span>
-              <span style={{ fontSize: 24, fontWeight: 'bold', marginTop: 8 }}>{employeeSummary.resignedEmployees}</span>
+            <Flex vertical className={styles.statCard}>
+              <span className={styles.statLabel}>On Resignation</span>
+              <span className={styles.statValue}>{employeeSummary.resignedEmployees}</span>
             </Flex>
           </Col>
           <Col className="gutter-row" span={6}>
-            <Flex vertical style={{ background: '#FFFFFF', padding: 16, borderRadius: 8, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
-              <span style={{ textTransform: 'uppercase', fontSize: 12, color: '#8893A0', letterSpacing: 1 }}>Open Access Requests</span>
-              <span style={{ fontSize: 24, fontWeight: 'bold', marginTop: 8 }}>5</span>
+            <Flex vertical className={styles.statCard}>
+              <span className={styles.statLabel}>Open Access Requests</span>
+              <span className={styles.statValue}>5</span>
             </Flex>
           </Col>
         </Row>
+
+        <Flex vertical className={styles.remindersPanel}>
+          <Flex justify="space-between" align="center" className={styles.remindersHeader}>
+            <Flex gap={8}>
+              <BellOutlined className={styles.bellIcon} />
+              <Flex vertical gap={8} className={styles.remindersInfo}>
+                <span className={styles.remindersTitle}>Reminders</span>
+                Upcoming events, birthdays, and milestones
+              </Flex>
+            </Flex>
+            <Flex gap={8}>
+              <Button type="link" onClick={() => { navigate('/reminders') }}>
+              <span className={styles.viewAllText}>
+                View all
+              </span>
+
+              <ArrowRightOutlined />
+              </Button>
+            </Flex>
+          </Flex>
+          <Flex>
+            <RemindersContent />
+          </Flex>
+        </Flex>
       </Flex>
     </>
   );

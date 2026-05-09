@@ -4,6 +4,7 @@ const { ALLOWED_DOMAINS } = require('../constants/allowedDomains');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const { sendAccessRequestEmail } = require('../lib/mailer');
 
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -23,26 +24,34 @@ router.post('/google', async (req, res) => {
         }
 
         const domain = hd || email.split('@')[1]?.toLowerCase();
-        if (!ALLOWED_DOMAINS.includes(domain)) {
-            return res.status(403).json({
-                error: 'Access restricted',
-                detail: `Sign-in is limited to authorized domains. Your account (${email}) is not eligible.`,
-            });
-        }
+        // if (!ALLOWED_DOMAINS.includes(domain)) {
+        //     return res.status(403).json({
+        //         error: 'Access restricted',
+        //         detail: `Sign-in is limited to authorized domains. Your account (${email}) is not eligible.`,
+        //     });
+        // }
+
+        const existingUser = await prisma.user.findUnique({ where: { google_sub: sub } });
 
         const user = await prisma.user.upsert({
             where: { google_sub: sub },
             update: { last_login_at: new Date() },
             create: {
-                google_sub: sub, 
-                email, 
-                email_verified, 
-                name, 
+                google_sub: sub,
+                email,
+                email_verified,
+                name,
                 picture,
-                status: USER_STATUS.PENDING, 
+                status: USER_STATUS.PENDING,
                 last_login_at: new Date(),
             }
-        })
+        });
+
+        if (!existingUser) {
+            sendAccessRequestEmail({ userName: name, userEmail: email }).catch(err =>
+                console.error('Failed to send access request email:', err.message)
+            );
+        }
 
         const session = jwt.sign({ uid: sub, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res

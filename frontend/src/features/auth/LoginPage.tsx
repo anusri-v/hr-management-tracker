@@ -25,7 +25,7 @@ const LoginPage = ({ onCredential, onError, error: _error }: Props) => {
                     <span className={styles.eyebrow}>Sign In</span>
                     <h2>Welcome</h2>
                     <GoogleLogin
-                        hosted_domain="shopup.org"
+                        // hosted_domain="shopup.org"
                         text="continue_with"
                         theme="outline"
                         size="large"

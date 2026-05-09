@@ -1,5 +1,6 @@
 import { Col, Flex, Row } from "antd"
 import type { Employee } from "../../../utils/types/employee";
+import shared from '../../../utils/styles/shared.module.css';
 
 type StatutoryTabContentType = {
     employee: Employee | undefined;
@@ -8,29 +9,28 @@ type StatutoryTabContentType = {
 const StatutoryTabContent = ({ employee }: StatutoryTabContentType) => {
     return (
         <>
-            <div style={{ background: 'white', padding: '24px', borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid', borderRadius: 12 }}>
-                <Row style={{ marginBottom: 24 }}>
+            <div className={shared.cardPanel}>
+                <Row className={shared.rowGap}>
                     <Col span={12}>
                         <Flex vertical>
-                            <span style={{ color: '#8893A0', textTransform: 'uppercase', fontSize: 12 }} >PAN Number</span>
+                            <span className={shared.fieldLabel}>PAN Number</span>
                             <span>{employee?.statutory_details[0]?.pan_number || "-"}</span>
                         </Flex>
                     </Col>
                     <Col span={12}>
                         <Flex vertical>
-                            <span style={{ color: '#8893A0', textTransform: 'uppercase', fontSize: 12 }}>Aadhar Number</span>
+                            <span className={shared.fieldLabel}>Aadhar Number</span>
                             <span>{employee?.statutory_details[0]?.aadhar_number || "-"}</span>
                         </Flex>
                     </Col>
                 </Row>
-                <Row style={{ marginBottom: 24 }}>
+                <Row className={shared.rowGap}>
                     <Col span={12}>
                         <Flex vertical>
-                            <span style={{ color: '#8893A0', textTransform: 'uppercase', fontSize: 12 }} >UAN / PF Number</span>
+                            <span className={shared.fieldLabel}>UAN / PF Number</span>
                             <span>{employee?.statutory_details[0]?.pf_number || "-"}</span>
                         </Flex>
                     </Col>
-                    
                 </Row>
             </div>
         </>

@@ -1,0 +1,48 @@
+.exitBanner {
+  background: #FCEEEA;
+  border: 1px solid #E55958;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.exitBannerLabel {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #E55958;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 12px 0;
+}
+
+.exitBannerHeading {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.exitHighlight {
+  color: #E55958;
+}
+
+.exitBannerDates {
+  margin-top: 16px;
+}
+
+.exitInfoBox {
+  background: #FEF9F7;
+  padding: 16px;
+  margin-top: 16px;
+  border: 1px solid #FEF9F8;
+  border-radius: 8px;
+}
+
+.smallBold {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.smallBoldCapitalize {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: capitalize;
+}

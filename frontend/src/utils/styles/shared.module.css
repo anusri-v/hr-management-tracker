@@ -1,0 +1,55 @@
+.fieldLabel {
+  color: #8893A0;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.fieldLabelSpaced {
+  color: #8893A0;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.75px;
+}
+
+.cardPanel {
+  background: white;
+  padding: 24px;
+  border: 1px solid #E6EAEE;
+  border-radius: 12px;
+}
+
+.sectionCard {
+  background: #FFFFFF;
+  width: 100%;
+  padding: 24px;
+  margin-top: 24px;
+  border-radius: 20px;
+  border: 1px solid #E6EAEE;
+}
+
+.rowGap {
+  margin-bottom: 24px;
+}
+
+.sectionNavBar {
+  width: 100%;
+  margin-top: 16px;
+  padding: 0 16px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.mutedText {
+  color: #8893A0;
+  font-size: 12px;
+}

@@ -5,6 +5,8 @@ import dayjs from "dayjs";
 import apiClient from "../../utils/apiClient";
 import type { Employee } from "../../utils/types/employee";
 import { DATE_FORMAT, exitReasons } from "../../utils/constants/constants";
+import shared from '../../utils/styles/shared.module.css';
+import styles from './ResignationModal.module.css';
 
 type ResignationFormValues = {
     last_working_day: Dayjs | null;
@@ -74,7 +76,7 @@ const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
             ]}
         >
             <Flex vertical>
-                <Flex style={{ textTransform: 'uppercase', color: '#8893A0', marginBottom: 16, letterSpacing: 1, fontSize: 12 }}>
+                <Flex className={styles.employeeLabel}>
                     {employee?.full_name} | {employee?.employee_id}
                 </Flex>
 
@@ -83,14 +85,14 @@ const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
                     layout="vertical"
                     initialValues={initialValues}
                     onFinish={handleFinish}
-                    style={{ width: '100%' }}
+                    className={shared.fullWidth}
                 >
                     <Form.Item
                         label="Last Working Day"
                         name="last_working_day"
                         rules={[{ required: true, message: 'Last Working Day is required' }]}
                     >
-                        <DatePicker format={DATE_FORMAT} style={{ width: '100%' }} />
+                        <DatePicker format={DATE_FORMAT} className={shared.fullWidth} />
                     </Form.Item>
 
                     <Form.Item
@@ -114,14 +116,14 @@ const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
 
                     <Form.Item label="Exit Documents">
                         <Flex vertical gap={16}>
-                            <Upload style={{ width: '100%' }}>
-                                <Button style={{ width: '100%' }} icon={<UploadOutlined />}>No Dues Form</Button>
+                            <Upload className={shared.fullWidth}>
+                                <Button className={shared.fullWidth} icon={<UploadOutlined />}>No Dues Form</Button>
                             </Upload>
-                            <Upload style={{ width: '100%' }}>
-                                <Button style={{ width: '100%' }} icon={<UploadOutlined />}>Exit Interview Form</Button>
+                            <Upload className={shared.fullWidth}>
+                                <Button className={shared.fullWidth} icon={<UploadOutlined />}>Exit Interview Form</Button>
                             </Upload>
-                            <Upload style={{ width: '100%' }}>
-                                <Button style={{ width: '100%' }} icon={<UploadOutlined />}>Resignation Acceptance Letter</Button>
+                            <Upload className={shared.fullWidth}>
+                                <Button className={shared.fullWidth} icon={<UploadOutlined />}>Resignation Acceptance Letter</Button>
                             </Upload>
                         </Flex>
                     </Form.Item>

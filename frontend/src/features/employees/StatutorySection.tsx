@@ -3,6 +3,7 @@ import { SaveOutlined } from "@ant-design/icons";
 import type { Employee } from "../../utils/types/employee";
 import { emptyStatutoryDetails } from "../../utils/types/employee";
 import apiClient from "../../utils/apiClient";
+import shared from '../../utils/styles/shared.module.css';
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -81,16 +82,16 @@ const StatutorySection = ({ employee, setEmployee, handleSectionNavigation }: Ba
 
     return (
         <>
-            <Flex vertical style={{ width: '100%' }}>
+            <Flex vertical className={shared.fullWidth}>
                 <Form
                     form={form}
                     layout="vertical"
                     initialValues={initialValues}
                     onFinish={handleStatutoryUpdate}
                     onValuesChange={(_, allValues) => syncFormToParent(allValues)}
-                    style={{ width: '100%' }}
+                    className={shared.fullWidth}
                 >
-                    <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
+                    <Flex vertical className={shared.sectionCard}>
                         <Row gutter={[24, 48]}>
                             <Col span={12}>
                                 <Form.Item label="Bank Name" name={"bank_name"}>
@@ -129,7 +130,7 @@ const StatutorySection = ({ employee, setEmployee, handleSectionNavigation }: Ba
                         </Row>
                     </Flex>
 
-                    <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
+                    <Flex className={shared.sectionNavBar} justify="space-between">
                         <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                         <Flex gap={16}>
                             <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>

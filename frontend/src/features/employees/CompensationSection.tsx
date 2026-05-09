@@ -4,6 +4,7 @@ import type { Employee } from "../../utils/types/employee";
 import { emptyCompensationDetails } from "../../utils/types/employee";
 import { CURRENCY_PREFIX, currencyOptions } from "../../utils/constants/constants";
 import apiClient from "../../utils/apiClient";
+import shared from '../../utils/styles/shared.module.css';
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -65,16 +66,16 @@ const CompensationSection = ({ employee, setEmployee, handleSectionNavigation }:
 
     return (
         <>
-            <Flex vertical style={{ width: '100%' }}>
+            <Flex vertical className={shared.fullWidth}>
                 <Form
                     form={form}
                     layout="vertical"
                     initialValues={initialValues}
                     onFinish={handleCompensationUpdate}
                     onValuesChange={(_, allValues) => syncFormToParent(allValues)}
-                    style={{ width: '100%' }}
+                    className={shared.fullWidth}
                 >
-                    <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
+                    <Flex vertical className={shared.sectionCard}>
                         <Row gutter={[24, 48]}>
                             <Col span={12}>
                                 <Form.Item label="Currency" name={"currency"} rules={[{ required: true, message: 'Currency is required' }]}>
@@ -83,13 +84,13 @@ const CompensationSection = ({ employee, setEmployee, handleSectionNavigation }:
                             </Col>
                             <Col span={12}>
                                 <Form.Item label="Annual CTC" name={"salary_ctc"} rules={[{ required: true, message: 'Annual CTC is required' }]}>
-                                    <InputNumber style={{ width: '100%' }} placeholder="0" prefix={prefix} />
+                                    <InputNumber className={shared.fullWidth} placeholder="0" prefix={prefix} />
                                 </Form.Item>
                             </Col>
                         </Row>
                     </Flex>
 
-                    <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
+                    <Flex className={shared.sectionNavBar} justify="space-between">
                         <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                         <Flex gap={16}>
                             <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>

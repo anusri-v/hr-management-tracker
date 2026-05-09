@@ -1,0 +1,13 @@
+.ctcCard {
+  margin-bottom: 16px;
+}
+
+.ctcAmount {
+  font-size: 40px;
+  font-weight: bold;
+}
+
+.percentText {
+  color: #8893A0;
+  font-size: 12px;
+}

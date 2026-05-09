@@ -23,6 +23,8 @@ export type User = {
   status: number
 }
 
+export type AppUser = User
+
 function homeFor(user: User | null) {
   if (!user) return '/login'
   if (user.status === 0) return '/access-pending'

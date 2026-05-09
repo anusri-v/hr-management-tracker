@@ -1,0 +1,18 @@
+.employeeHeader {
+  background: white;
+  margin-top: 24px;
+  border-radius: 12px;
+  padding: 24px 48px;
+  border: 1px solid #E6EAEE;
+  color: #8893A0;
+}
+
+.employeeName {
+  font-size: 20px;
+  font-weight: bold;
+  color: #000000;
+}
+
+.detailsRow {
+  margin-top: 16px;
+}

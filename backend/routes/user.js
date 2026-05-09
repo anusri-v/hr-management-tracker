@@ -16,14 +16,30 @@ const ALLOWED_TRANSITIONS = {
 router.get('/', requireAuth, async (req, res) => {
     try {
         const { status } = req.query;
-        const where = status !== undefined ? { status: Number(status) } : {};
+        const statusValues = status === undefined ? null : (Array.isArray(status) ? status : [status]).map(Number);
+        const where = statusValues ? { status: { in: statusValues } } : {};
 
         const [users, count] = await Promise.all([
             prisma.user.findMany({ where, orderBy: { created_at: 'desc' } }),
             prisma.user.count({ where }),
         ]);
 
-        res.json({ users, count });
+        const relatedIds = [...new Set([
+            ...users.map(u => u.authorized_by),
+            ...users.map(u => u.revoked_by),
+        ].filter(Boolean))];
+        const relatedUsers = relatedIds.length
+            ? await prisma.user.findMany({ where: { id: { in: relatedIds } }, select: { id: true, name: true } })
+            : [];
+        const userNameMap = Object.fromEntries(relatedUsers.map(u => [u.id, u.name]));
+
+        const usersWithAuthorizer = users.map(u => ({
+            ...u,
+            authorized_by_name: u.authorized_by ? userNameMap[u.authorized_by] ?? null : null,
+            revoked_by_name: u.revoked_by ? userNameMap[u.revoked_by] ?? null : null,
+        }));
+
+        res.json({ users: usersWithAuthorizer, count });
     } catch (e) {
         console.error('GET /users failed:', e.message);
         res.status(500).json({ error: 'Failed to fetch users' });
@@ -47,12 +63,15 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
             });
         }
 
+        const actor = await prisma.user.findUnique({ where: { google_sub: req.user.uid }, select: { id: true } });
+        if (!actor) return res.status(403).json({ error: 'Actor not found' });
+
         const updateData = { status: newStatus };
         if (newStatus === USER_STATUS.ACTIVE) {
-            updateData.authorized_by = req.user.uid;
+            updateData.authorized_by = actor.id;
             updateData.authorized_at = new Date();
         } else if (newStatus === USER_STATUS.REVOKED) {
-            updateData.revoked_by = req.user.uid;
+            updateData.revoked_by = actor.id;
             updateData.revoked_at = new Date();
         }
 

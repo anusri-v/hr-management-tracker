@@ -127,3 +127,10 @@ export const emptyEmployee = (): Employee => ({
     statutory_details: [emptyStatutoryDetails()],
     offer_letter_status: '',
 });
+
+export type ReminderType = {
+  type: string,
+  employee_id: string,
+  full_name: string,
+  date: string,
+}

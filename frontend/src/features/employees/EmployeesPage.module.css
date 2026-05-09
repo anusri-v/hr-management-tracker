@@ -1,0 +1,20 @@
+.pageTitle {
+  font-weight: bold;
+}
+
+.employeeIdLink {
+  color: #3CB5B0;
+}
+
+.filterBar {
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.searchInput {
+  width: 320px;
+}
+
+.filterSelect {
+  width: 200px;
+}

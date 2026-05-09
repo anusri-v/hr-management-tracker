@@ -4,6 +4,7 @@ import dayjs, { Dayjs } from "dayjs";
 import type { Employee } from "../../utils/types/employee";
 import apiClient from "../../utils/apiClient";
 import { DATE_FORMAT, departmentOptions, workLocationOption } from "../../utils/constants/constants";
+import shared from '../../utils/styles/shared.module.css';
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -80,16 +81,16 @@ const EmploymentSection = ({ employee, setEmployee, handleSectionNavigation }: B
 
     return (
         <>
-            <Flex vertical style={{ width: '100%' }}>
+            <Flex vertical className={shared.fullWidth}>
                 <Form
                     form={form}
                     layout="vertical"
                     initialValues={initialValues}
                     onFinish={handleEmployeeUpdate}
                     onValuesChange={(_, allValues) => syncFormToParent(allValues)}
-                    style={{ width: '100%' }}
+                    className={shared.fullWidth}
                 >
-                    <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
+                    <Flex vertical className={shared.sectionCard}>
                         <Row gutter={[24, 48]}>
                             <Col span={12}>
                                 <Form.Item label="Department" name={"department"} rules={[{ required: true, message: 'Department is required' }]}>
@@ -121,12 +122,12 @@ const EmploymentSection = ({ employee, setEmployee, handleSectionNavigation }: B
                         <Row gutter={[24, 48]}>
                             <Col span={12}>
                                 <Form.Item label="Date of Joining" name={"date_of_joining"} rules={[{ required: true, message: 'Date of Joining is required' }]} >
-                                    <DatePicker format={DATE_FORMAT} style={{ width: '100%' }} />
+                                    <DatePicker format={DATE_FORMAT} className={shared.fullWidth} />
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
                                 <Form.Item label="Internal Transfer Date" name={"internal_transfer_date"} >
-                                    <DatePicker format={DATE_FORMAT} style={{ width: '100%' }} />
+                                    <DatePicker format={DATE_FORMAT} className={shared.fullWidth} />
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -147,7 +148,7 @@ const EmploymentSection = ({ employee, setEmployee, handleSectionNavigation }: B
                         </Row>
                     </Flex>
 
-                    <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
+                    <Flex className={shared.sectionNavBar} justify="space-between">
                         <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                         <Flex gap={16}>
                             <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>

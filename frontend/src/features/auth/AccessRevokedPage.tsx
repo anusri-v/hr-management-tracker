@@ -16,7 +16,7 @@ const AccessRevokedPage = ({ handleLogout }: AccessRevokedPageProps) => {
                 <h2>Your access has been revoked</h2>
 
                 <p className={styles.body}>
-                    You no longer have access to the HR portal. If you believe this is a mistake, you can request access again.
+                    You no longer have access to the HR portal. 
                 </p>
 
                 <Flex justify="space-between" align="center" className={styles.statusRow}>
@@ -26,7 +26,6 @@ const AccessRevokedPage = ({ handleLogout }: AccessRevokedPageProps) => {
 
                 <Flex justify="space-around" align="center" className={styles.actions}>
                     <Button onClick={handleLogout}>Sign Out</Button>
-                    <Button type="primary">Request Access Again</Button>
                 </Flex>
             </Flex>
         </Flex>

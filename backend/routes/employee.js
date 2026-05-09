@@ -82,15 +82,17 @@ router.get('/reminders', async (req, res) => {
         for (const emp of allActive) {
             if (emp.date_of_birth) {
                 const next = nextYearlyOccurrence(new Date(emp.date_of_birth), today);
+                const dob = new Date(emp.date_of_birth)
                 if (withinWindow(next, today, REMINDER_WINDOW_DAYS)) {
-                    reminders.push({ type: 'birthday', employee_id: emp.employee_id, full_name: emp.full_name, date: next });
+                    reminders.push({ type: 'birthday', employee_id: emp.employee_id, full_name: emp.full_name, date: dob });
                 }
             }
             if (emp.date_of_joining) {
                 const next = nextYearlyOccurrence(new Date(emp.date_of_joining), today);
                 const joinYear = new Date(emp.date_of_joining).getFullYear();
+                const doj = new Date(emp.date_of_joining)
                 if (next.getFullYear() > joinYear && withinWindow(next, today, REMINDER_WINDOW_DAYS)) {
-                    reminders.push({ type: 'work_anniversary', employee_id: emp.employee_id, full_name: emp.full_name, date: next });
+                    reminders.push({ type: 'work_anniversary', employee_id: emp.employee_id, full_name: emp.full_name, date: doj });
                 }
             }
         }

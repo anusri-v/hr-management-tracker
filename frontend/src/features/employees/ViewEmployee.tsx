@@ -13,6 +13,7 @@ import type { Employee } from "../../utils/types/employee";
 import ExpatStatusTag from "../../utils/components/ExpatStatusTag";
 import ResignationModal from "./ResignationModal";
 import ExitDetailsTabContent from "./TabItems/ExitDetailsTabContent";
+import styles from './ViewEmployee.module.css';
 
 const ViewEmployee = () => {
     const navigate = useNavigate();
@@ -99,14 +100,14 @@ const ViewEmployee = () => {
                 </Flex>
             </Flex>
 
-            <Flex vertical style={{ background: 'white', marginTop: 24, borderRadius: 12, padding: '24px 48px', borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid', color: '#8893A0' }}>
+            <Flex vertical className={styles.employeeHeader}>
                 <Flex gap={16} align='center'>
-                    <span style={{ fontSize: 20, fontWeight: 'bold', color: '#000000' }}>{employee?.full_name}</span>
+                    <span className={styles.employeeName}>{employee?.full_name}</span>
                     <EmploymentStatusTag status={employee?.employment_status || ''} />
                     <EmploymentTypeTag employment_type={employee?.employment_type || ''} />
                     <ExpatStatusTag status={employee?.expat_status || ''} />
                 </Flex>
-                <Flex gap={24} style={{ marginTop: 16 }}>
+                <Flex gap={24} className={styles.detailsRow}>
                     <Flex gap={8}>
                         <TeamOutlined /><span>{employee?.designation}</span>
                         <span>·</span>

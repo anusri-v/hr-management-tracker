@@ -1,6 +1,8 @@
 import { Button, Col, Flex, Radio, Row, Upload } from "antd";
 import { UploadOutlined, SaveOutlined } from '@ant-design/icons';
 import type { Employee } from "../../utils/types/employee";
+import shared from '../../utils/styles/shared.module.css';
+import styles from './OnboardingSection.module.css';
 
 type BasicInformationSectionProps = {
     employee: Employee,
@@ -21,12 +23,12 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
 
     return (
         <>
-            <Flex vertical style={{ width: '100%' }}>
-                <Flex vertical style={{ background: '#FFFFFF', width: '100%', padding: 24, marginTop: 24, borderRadius: 20, borderColor: '#E6EAEE', borderWidth: 1, borderStyle: 'solid' }}>
+            <Flex vertical className={shared.fullWidth}>
+                <Flex vertical className={shared.sectionCard}>
                     <Row gutter={[24, 48]}>
                         <Col span={12}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
-                                <span style={{ margin: 4 }}>Offer / Appointment Letter Status</span>
+                            <Flex vertical className={styles.uploadItem}>
+                                <span className={styles.labelMargin}>Offer / Appointment Letter Status</span>
                                 <Radio.Group value={employee.offer_letter_status} onChange={(e) => handleInputChange(e.target.value, 'offer_letter_status')}>
                                     <Radio.Button value="pending">Pending</Radio.Button>
                                     <Radio.Button value="sent">Sent</Radio.Button>
@@ -37,7 +39,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                     </Row>
                     <Row gutter={[24, 48]}>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger>
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -50,7 +52,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                             </Flex>
                         </Col>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger>
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -63,7 +65,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                             </Flex>
                         </Col>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger>
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -79,7 +81,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
 
                     <Row gutter={[24, 48]}>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger>
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -92,7 +94,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                             </Flex>
                         </Col>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger>
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -105,7 +107,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                             </Flex>
                         </Col>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger accept=".pdf">
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -121,7 +123,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
 
                     <Row gutter={[24, 48]}>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger>
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -134,7 +136,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                             </Flex>
                         </Col>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger>
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -147,7 +149,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                             </Flex>
                         </Col>
                         <Col span={8}>
-                            <Flex vertical style={{ marginBottom: 16 }}>
+                            <Flex vertical className={styles.uploadItem}>
                                 <Upload.Dragger>
                                     <Flex vertical gap={8} align="flex-start">
                                         <Flex gap={8}>
@@ -162,7 +164,7 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                     </Row>
                 </Flex>
 
-                <Flex style={{ width: '100%', marginTop: 16, paddingLeft: 16, paddingRight: 16 }} justify="space-between">
+                <Flex className={shared.sectionNavBar} justify="space-between">
                     <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                     <Button type="primary" onClick={() => {
                         console.log("Employee Submit: ", employee);
