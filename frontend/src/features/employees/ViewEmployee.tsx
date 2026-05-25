@@ -13,6 +13,7 @@ import type { Employee } from "../../utils/types/employee";
 import ExpatStatusTag from "../../utils/components/ExpatStatusTag";
 import ResignationModal from "./ResignationModal";
 import ExitDetailsTabContent from "./TabItems/ExitDetailsTabContent";
+import DocumentsTabContent from "./TabItems/DocumentsTabContent";
 import styles from './ViewEmployee.module.css';
 
 const ViewEmployee = () => {
@@ -70,7 +71,7 @@ const ViewEmployee = () => {
         {
             key: '5',
             label: 'Documents',
-            children: 'Content of Documents',
+            children: <DocumentsTabContent employeeId={employeeId} />,
         }
     ];
 

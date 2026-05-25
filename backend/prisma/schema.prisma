@@ -67,8 +67,26 @@ model Employee {
   compensation_details    CompensationDetails[]
   statutory_details       StatutoryDetails[]
   exit_details            ExitDetails[]
+  documents               EmployeeDocument[]
 
   @@map("employees")
+}
+
+model EmployeeDocument {
+  id            Int       @id @default(autoincrement())
+  employee_id   Int
+  document_type String
+  file_name     String
+  storage_key   String
+  content_type  String?
+  size          Int?
+  uploaded_by   Int?
+  created_at    DateTime? @default(now())
+  updated_at    DateTime? @updatedAt
+  employee      Employee  @relation(fields: [employee_id], references: [id])
+
+  @@unique([employee_id, document_type])
+  @@map("employee_documents")
 }
 
 model CompensationDetails {
@@ -114,6 +132,15 @@ model ExitDetails {
   employee                Employee  @relation(fields: [employee_id], references: [id])
 
   @@map("exit_details")
+}
+
+model SentReminder {
+  id        Int      @id @default(autoincrement())
+  dedup_key String   @unique
+  type      String
+  sent_at   DateTime @default(now())
+
+  @@map("sent_reminders")
 }
 
 model ActivityLog {

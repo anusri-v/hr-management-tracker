@@ -8,6 +8,7 @@ const employeeRouter = require('./routes/employee');
 const userRouter = require('./routes/user');
 const activityLogRouter = require('./routes/activityLog');
 const requireAuth = require('./middleware/requireAuth');
+const { startScheduler } = require('./lib/scheduler');
 
 const app = express();
 
@@ -36,6 +37,8 @@ app.get('/me', requireAuth, async (req, res) => {
 
     res.json({ user: userRecord });
 });
+
+startScheduler();
 
 app.listen(3000, () => {
     console.log('The server is running');

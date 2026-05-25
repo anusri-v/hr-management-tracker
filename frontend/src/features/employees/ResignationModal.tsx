@@ -1,9 +1,12 @@
-import { Button, DatePicker, Flex, Form, message, Modal, Radio, Select, Upload } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Button, DatePicker, Flex, Form, message, Modal, Radio, Select } from "antd";
 import { type Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import apiClient from "../../utils/apiClient";
 import type { Employee } from "../../utils/types/employee";
+import type { EmployeeDocument } from "../../utils/types/documents";
+import { EXIT_DOCUMENT_TYPES } from "../../utils/types/documents";
+import DocumentUploadField from "./documents/DocumentUploadField";
 import { DATE_FORMAT, exitReasons } from "../../utils/constants/constants";
 import shared from '../../utils/styles/shared.module.css';
 import styles from './ResignationModal.module.css';
@@ -23,6 +26,32 @@ type Props = {
 
 const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
     const [form] = Form.useForm<ResignationFormValues>();
+    const [documents, setDocuments] = useState<Record<string, EmployeeDocument>>({});
+
+    useEffect(() => {
+        if (open && employee?.employee_id) loadDocuments();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, employee?.employee_id]);
+
+    async function loadDocuments() {
+        if (!employee?.employee_id) return;
+        try {
+            const data = await apiClient.get<{ success: boolean; documents: EmployeeDocument[] }>(
+                `/employee/${employee.employee_id}/documents`,
+            );
+            if (data.success) {
+                const byType: Record<string, EmployeeDocument> = {};
+                data.documents.forEach((doc) => { byType[doc.document_type] = doc; });
+                setDocuments(byType);
+            }
+        } catch (e) {
+            console.error('Failed to load exit documents:', e);
+        }
+    }
+
+    const handleUploaded = (doc: EmployeeDocument) => {
+        setDocuments((prev) => ({ ...prev, [doc.document_type]: doc }));
+    };
 
     const existingExit = employee?.exit_details?.[0];
 
@@ -115,17 +144,19 @@ const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
                     </Form.Item>
 
                     <Form.Item label="Exit Documents">
-                        <Flex vertical gap={16}>
-                            <Upload className={shared.fullWidth}>
-                                <Button className={shared.fullWidth} icon={<UploadOutlined />}>No Dues Form</Button>
-                            </Upload>
-                            <Upload className={shared.fullWidth}>
-                                <Button className={shared.fullWidth} icon={<UploadOutlined />}>Exit Interview Form</Button>
-                            </Upload>
-                            <Upload className={shared.fullWidth}>
-                                <Button className={shared.fullWidth} icon={<UploadOutlined />}>Resignation Acceptance Letter</Button>
-                            </Upload>
-                        </Flex>
+                        {employee?.employee_id ? (
+                            <Flex vertical gap={16}>
+                                {EXIT_DOCUMENT_TYPES.map((type) => (
+                                    <DocumentUploadField
+                                        key={type}
+                                        employeeId={employee.employee_id}
+                                        documentType={type}
+                                        existing={documents[type]}
+                                        onUploaded={handleUploaded}
+                                    />
+                                ))}
+                            </Flex>
+                        ) : null}
                     </Form.Item>
                 </Form>
             </Flex>

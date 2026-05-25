@@ -24,12 +24,12 @@ router.post('/google', async (req, res) => {
         }
 
         const domain = hd || email.split('@')[1]?.toLowerCase();
-        // if (!ALLOWED_DOMAINS.includes(domain)) {
-        //     return res.status(403).json({
-        //         error: 'Access restricted',
-        //         detail: `Sign-in is limited to authorized domains. Your account (${email}) is not eligible.`,
-        //     });
-        // }
+        if (!ALLOWED_DOMAINS.includes(domain)) {
+            return res.status(403).json({
+                error: 'Access restricted',
+                detail: `Sign-in is limited to authorized domains. Your account (${email}) is not eligible.`,
+            });
+        }
 
         const existingUser = await prisma.user.findUnique({ where: { google_sub: sub } });
 

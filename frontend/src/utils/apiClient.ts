@@ -43,6 +43,18 @@ async function postFile<T = unknown>(path: string, formData: FormData): Promise<
     return data as T;
 }
 
+// Upload a file directly to an external (S3-compatible) presigned URL.
+// This bypasses our API entirely — no credentials, no JSON envelope. The
+// Content-Type must match what was signed server-side.
+async function uploadToUrl(url: string, file: File): Promise<void> {
+    const res = await fetch(url, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    });
+    if (!res.ok) throw new ApiError(res.status, await res.text().catch(() => ''));
+}
+
 const apiClient = {
     get:      <T = unknown>(path: string) => request<T>('GET', path),
     post:     <T = unknown>(path: string, body?: unknown) => request<T>('POST', path, body),
@@ -50,6 +62,7 @@ const apiClient = {
     put:      <T = unknown>(path: string, body?: unknown) => request<T>('PUT', path, body),
     delete:   <T = unknown>(path: string) => request<T>('DELETE', path),
     postFile: <T = unknown>(path: string, formData: FormData) => postFile<T>(path, formData),
+    uploadToUrl: (url: string, file: File) => uploadToUrl(url, file),
 };
 
 export default apiClient;

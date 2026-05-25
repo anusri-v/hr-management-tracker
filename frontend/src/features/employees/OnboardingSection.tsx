@@ -1,6 +1,11 @@
-import { Button, Col, Flex, Radio, Row, Upload } from "antd";
-import { UploadOutlined, SaveOutlined } from '@ant-design/icons';
+import { useEffect, useState } from "react";
+import { Button, Col, Flex, Radio, Row } from "antd";
+import { SaveOutlined } from '@ant-design/icons';
+import apiClient from "../../utils/apiClient";
 import type { Employee } from "../../utils/types/employee";
+import type { EmployeeDocument } from "../../utils/types/documents";
+import { ONBOARDING_DOCUMENT_TYPES } from "../../utils/types/documents";
+import DocumentUploadField from "./documents/DocumentUploadField";
 import shared from '../../utils/styles/shared.module.css';
 import styles from './OnboardingSection.module.css';
 
@@ -11,6 +16,32 @@ type BasicInformationSectionProps = {
 }
 
 const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: BasicInformationSectionProps) => {
+    const [documents, setDocuments] = useState<Record<string, EmployeeDocument>>({});
+
+    useEffect(() => {
+        if (employee.employee_id) loadDocuments();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [employee.employee_id]);
+
+    async function loadDocuments() {
+        try {
+            const data = await apiClient.get<{ success: boolean; documents: EmployeeDocument[] }>(
+                `/employee/${employee.employee_id}/documents`,
+            );
+            if (data.success) {
+                const byType: Record<string, EmployeeDocument> = {};
+                data.documents.forEach((doc) => { byType[doc.document_type] = doc; });
+                setDocuments(byType);
+            }
+        } catch (e) {
+            console.error('Failed to load documents:', e);
+        }
+    }
+
+    const handleUploaded = (doc: EmployeeDocument) => {
+        setDocuments((prev) => ({ ...prev, [doc.document_type]: doc }));
+    };
+
     const handleInputChange = (value: string, field: string) => {
         switch (field) {
             case 'offer_letter_status':
@@ -38,136 +69,24 @@ const OnboardingSection = ({ employee, setEmployee, handleSectionNavigation }: B
                         </Col>
                     </Row>
                     <Row gutter={[24, 48]}>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger>
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>Offer Letter</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger>
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>Signed Offer Letter</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger>
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>Aadhar Card</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF/JPG/PNG, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
-                    </Row>
-
-                    <Row gutter={[24, 48]}>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger>
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>PAN Card</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger>
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>Bank Passbook</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger accept=".pdf">
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>Passport</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF/JPG/PNG, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
-                    </Row>
-
-                    <Row gutter={[24, 48]}>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger>
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>Photograph</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger>
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>Driving License</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
-                        <Col span={8}>
-                            <Flex vertical className={styles.uploadItem}>
-                                <Upload.Dragger>
-                                    <Flex vertical gap={8} align="flex-start">
-                                        <Flex gap={8}>
-                                            <UploadOutlined />
-                                            <span>Other</span>
-                                        </Flex>
-                                        <span><i>Click to upload (PDF/JPG/PNG, max 5MB)</i></span>
-                                    </Flex>
-                                </Upload.Dragger>
-                            </Flex>
-                        </Col>
+                        {ONBOARDING_DOCUMENT_TYPES.map((type) => (
+                            <Col span={8} key={type}>
+                                <Flex vertical className={styles.uploadItem}>
+                                    <DocumentUploadField
+                                        employeeId={employee.employee_id}
+                                        documentType={type}
+                                        existing={documents[type]}
+                                        onUploaded={handleUploaded}
+                                    />
+                                </Flex>
+                            </Col>
+                        ))}
                     </Row>
                 </Flex>
 
                 <Flex className={shared.sectionNavBar} justify="space-between">
                     <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                     <Button type="primary" onClick={() => {
-                        console.log("Employee Submit: ", employee);
                         handleSectionNavigation('next')
                     }} icon={<SaveOutlined />}>
                         Save & Finish

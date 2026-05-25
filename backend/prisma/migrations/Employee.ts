@@ -85,6 +85,10 @@ async function migrateRecord(client: PrismaClient, cursor: Cursor | undefined) {
  *     "exit_details": {
  *       "modelName": "ExitDetails",
  *       "isList": true
+ *     },
+ *     "documents": {
+ *       "modelName": "EmployeeDocument",
+ *       "isList": true
  *     }
  *   }
  * }

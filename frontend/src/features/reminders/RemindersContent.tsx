@@ -1,4 +1,4 @@
-import { Flex, message } from "antd";
+import { Empty, Flex, message } from "antd";
 import { useState, useEffect } from "react";
 import apiClient from "../../utils/apiClient";
 import BirthdayReminder from "../../utils/components/BirthdayReminder";
@@ -24,7 +24,6 @@ const RemindersContent = () => {
                 return
             }
             setReminders(data.reminders)
-            message.success("Reminders fetched successfully")
         } catch (e) {
             console.error('Failed to fetch reminders: ', e)
             message.error('Internal server error')
@@ -49,9 +48,13 @@ const RemindersContent = () => {
     return (
         <>
             <Flex vertical className={styles.reminderList}>
-                {reminders.map((reminder) => (
-                    handleReminderRender(reminder)
-                ))}
+                {reminders.length === 0
+                    ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No upcoming reminders" />
+                    : reminders.map((reminder, idx) => (
+                        <div key={`${reminder.type}-${reminder.employee_id}-${idx}`}>
+                            {handleReminderRender(reminder)}
+                        </div>
+                    ))}
             </Flex>
         </>
     );

@@ -7,8 +7,20 @@ const router = express.Router();
 const prisma = require('../lib/prisma');
 const requireAuth = require('../middleware/requireAuth');
 const { logActivity } = require('../lib/activityLog');
+const storage = require('../lib/storage');
+const { runDailyReminders, runMonthlyBirthdayDigest } = require('../lib/reminderJobs');
 
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Allowed employee document types (onboarding + exit). Keep in sync with the
+// frontend label map in src/utils/types.
+const DOCUMENT_TYPES = new Set([
+    // onboarding
+    'offer_letter', 'signed_offer_letter', 'aadhar_card', 'pan_card',
+    'bank_passbook', 'passport', 'photo', 'driving_license', 'other',
+    // exit
+    'no_dues_form', 'exit_interview_form', 'resignation_acceptance_letter',
+]);
 
 router.get('/summary', async (req, res) => {
     try {
@@ -130,6 +142,7 @@ router.get('/bulk-export', async (req, res) => {
     try {
         const employees = await prisma.employee.findMany({
             orderBy: { employee_id: 'asc' },
+            include: { statutory_details: { orderBy: { id: 'desc' }, take: 1 } },
         });
 
         // Build a map of internal id -> employee_id string for reporting manager lookup
@@ -153,6 +166,7 @@ router.get('/bulk-export', async (req, res) => {
             { header: 'designation', key: 'designation', width: 20 },
             { header: 'employment_type', key: 'employment_type', width: 15 },
             { header: 'date_of_joining', key: 'date_of_joining', width: 15 },
+            { header: 'internal_transfer_date', key: 'internal_transfer_date', width: 18 },
             { header: 'reporting_manager', key: 'reporting_manager', width: 15 },
             { header: 'work_location', key: 'work_location', width: 15 },
             { header: 'expat_status', key: 'expat_status', width: 12 },
@@ -161,9 +175,19 @@ router.get('/bulk-export', async (req, res) => {
             { header: 'talentx_id', key: 'talentx_id', width: 15 },
             { header: 'emergency_contact_name', key: 'emergency_contact_name', width: 22 },
             { header: 'emergency_contact_phone', key: 'emergency_contact_phone', width: 22 },
+            { header: 'father_name', key: 'father_name', width: 20 },
+            { header: 'mother_name', key: 'mother_name', width: 20 },
+            { header: 'spouse_name', key: 'spouse_name', width: 20 },
+            { header: 'child1_name', key: 'child1_name', width: 20 },
+            { header: 'child2_name', key: 'child2_name', width: 20 },
+            { header: 'pan_number', key: 'pan_number', width: 16 },
+            { header: 'aadhar_number', key: 'aadhar_number', width: 18 },
+            { header: 'pf_number', key: 'pf_number', width: 16 },
         ];
 
         for (const emp of employees) {
+            const family = emp.family_members ?? {};
+            const statutory = emp.statutory_details?.[0] ?? {};
             sheet.addRow({
                 employee_id: emp.employee_id,
                 full_name: emp.full_name,
@@ -176,6 +200,7 @@ router.get('/bulk-export', async (req, res) => {
                 designation: emp.designation ?? '',
                 employment_type: emp.employment_type ?? '',
                 date_of_joining: emp.date_of_joining ? emp.date_of_joining.toISOString().split('T')[0] : '',
+                internal_transfer_date: emp.internal_transfer_date ? emp.internal_transfer_date.toISOString().split('T')[0] : '',
                 reporting_manager: emp.reporting_manager_id ? (idToEmpId[emp.reporting_manager_id] ?? '') : '',
                 work_location: emp.work_location ?? '',
                 expat_status: emp.expat_status ?? '',
@@ -184,6 +209,14 @@ router.get('/bulk-export', async (req, res) => {
                 talentx_id: emp.talentx_id ?? '',
                 emergency_contact_name: emp.emergency_contact_name ?? '',
                 emergency_contact_phone: emp.emergency_contact_phone ?? '',
+                father_name: family.father_name ?? '',
+                mother_name: family.mother_name ?? '',
+                spouse_name: family.spouse_name ?? '',
+                child1_name: family.child1_name ?? '',
+                child2_name: family.child2_name ?? '',
+                pan_number: statutory.pan_number ?? '',
+                aadhar_number: statutory.aadhar_number ?? '',
+                pf_number: statutory.pf_number ?? '',
             });
         }
 
@@ -247,6 +280,34 @@ const HEADER_MAP = {
     'emergencycontactname': 'emergency_contact_name',
     'emergencycontactphone': 'emergency_contact_phone',
     'emergencyphone': 'emergency_contact_phone',
+    // employment
+    'internaltransferdate': 'internal_transfer_date',
+    'transferdate': 'internal_transfer_date',
+    'employmentstatus': 'employment_status',
+    'status': 'employment_status',
+    // family members (stored as JSON on the employee)
+    'fathername': 'father_name',
+    'fathersname': 'father_name',
+    'mothername': 'mother_name',
+    'mothersname': 'mother_name',
+    'spousename': 'spouse_name',
+    'spousesname': 'spouse_name',
+    'child1name': 'child1_name',
+    'child1': 'child1_name',
+    'child2name': 'child2_name',
+    'child2': 'child2_name',
+    // statutory details (separate table)
+    'pannumber': 'pan_number',
+    'pan': 'pan_number',
+    'aadharnumber': 'aadhar_number',
+    'aadhaarnumber': 'aadhar_number',
+    'aadhar': 'aadhar_number',
+    'aadhaar': 'aadhar_number',
+    'pfnumber': 'pf_number',
+    'pf': 'pf_number',
+    'uan': 'pf_number',
+    'uannumber': 'pf_number',
+    'pfuan': 'pf_number',
 };
 
 function parseDateValue(val) {
@@ -320,8 +381,20 @@ router.post('/bulk-import', requireAuth, upload.single('file'), async (req, res)
         const created = [];
         const createErrors = [];
 
+        const str = (v) => (v != null && String(v).trim() !== '' ? String(v).trim() : undefined);
+
         for (const { rowNumber, data } of validRows) {
             try {
+                // Build family_members JSON from any provided members.
+                const familyEntries = {
+                    father_name: str(data.father_name),
+                    mother_name: str(data.mother_name),
+                    spouse_name: str(data.spouse_name),
+                    child1_name: str(data.child1_name),
+                    child2_name: str(data.child2_name),
+                };
+                const hasFamily = Object.values(familyEntries).some((v) => v !== undefined);
+
                 const emp = await prisma.employee.create({
                     data: {
                         employee_id: String(data.employee_id).trim(),
@@ -331,18 +404,34 @@ router.post('/bulk-import', requireAuth, upload.single('file'), async (req, res)
                         contact_number: String(data.contact_number).trim(),
                         email_id: String(data.email_id).trim(),
                         address: String(data.address).trim(),
-                        department: data.department ? String(data.department).trim() : undefined,
-                        designation: data.designation ? String(data.designation).trim() : undefined,
+                        department: str(data.department),
+                        designation: str(data.designation),
                         employment_type: data.employment_type ? String(data.employment_type).trim().toLowerCase() : undefined,
                         date_of_joining: data.date_of_joining ? parseDateValue(data.date_of_joining) : undefined,
-                        work_location: data.work_location ? String(data.work_location).trim() : undefined,
+                        internal_transfer_date: data.internal_transfer_date ? parseDateValue(data.internal_transfer_date) : undefined,
+                        work_location: str(data.work_location),
                         expat_status: data.expat_status ? String(data.expat_status).trim().toLowerCase() : 'native',
-                        source_of_hire: data.source_of_hire ? String(data.source_of_hire).trim() : undefined,
-                        talentx_id: data.talentx_id ? String(data.talentx_id).trim() : undefined,
-                        emergency_contact_name: data.emergency_contact_name ? String(data.emergency_contact_name).trim() : undefined,
-                        emergency_contact_phone: data.emergency_contact_phone ? String(data.emergency_contact_phone).trim() : undefined,
+                        employment_status: data.employment_status ? String(data.employment_status).trim().toLowerCase() : undefined,
+                        source_of_hire: str(data.source_of_hire),
+                        talentx_id: str(data.talentx_id),
+                        emergency_contact_name: str(data.emergency_contact_name),
+                        emergency_contact_phone: str(data.emergency_contact_phone),
+                        family_members: hasFamily ? familyEntries : undefined,
                     },
                 });
+
+                // Statutory details live in a separate table — create when provided.
+                const statutory = {
+                    pan_number: str(data.pan_number),
+                    aadhar_number: str(data.aadhar_number),
+                    pf_number: str(data.pf_number),
+                };
+                if (Object.values(statutory).some((v) => v !== undefined)) {
+                    await prisma.statutoryDetails.create({
+                        data: { employee_id: emp.id, ...statutory },
+                    });
+                }
+
                 created.push({ rowNumber, employee_id: emp.employee_id, internalId: emp.id, reporting_manager_emp_id: data.reporting_manager_emp_id });
             } catch (e) {
                 if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -786,6 +875,192 @@ router.get('/', async (req, res) => {
     } catch (e) {
         console.error('GET /employee failed:', e.message);
         res.status(500).json({ error: 'Internal server error', detail: e.message });
+    }
+});
+
+// ---------------------------------------------------------------------------
+// Employee documents (Railway bucket, presigned-URL flow)
+// ---------------------------------------------------------------------------
+
+// Step 1: hand the browser a short-lived presigned PUT URL to upload directly.
+router.post('/:employee_id/documents/upload-url', requireAuth, async (req, res) => {
+    const { employee_id } = req.params;
+    const { document_type, file_name, content_type } = req.body;
+
+    if (!DOCUMENT_TYPES.has(document_type)) {
+        return res.status(400).json({ success: false, message: 'Invalid document type' });
+    }
+
+    try {
+        const employee = await prisma.employee.findUnique({ where: { employee_id } });
+        if (employee == null) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+
+        const storage_key = storage.buildKey({ employeeId: employee_id, documentType: document_type, fileName: file_name });
+        const upload_url = await storage.getUploadUrl({ key: storage_key, contentType: content_type });
+
+        res.status(200).json({ success: true, upload_url, storage_key });
+    } catch (e) {
+        console.error('POST /employee/:id/documents/upload-url failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
+
+// Step 2: after the browser PUTs the file, record the metadata. One row per
+// (employee, document_type) — re-uploading replaces and deletes the old object.
+router.post('/:employee_id/documents', requireAuth, async (req, res) => {
+    const { employee_id } = req.params;
+    const { document_type, file_name, storage_key, content_type, size } = req.body;
+
+    if (!DOCUMENT_TYPES.has(document_type)) {
+        return res.status(400).json({ success: false, message: 'Invalid document type' });
+    }
+    if (!storage_key || !file_name) {
+        return res.status(400).json({ success: false, message: 'file_name and storage_key are required' });
+    }
+
+    try {
+        const employee = await prisma.employee.findUnique({ where: { employee_id } });
+        if (employee == null) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+
+        const existing = await prisma.employeeDocument.findUnique({
+            where: { employee_id_document_type: { employee_id: employee.id, document_type } },
+        });
+
+        const actor = await prisma.user.findUnique({ where: { google_sub: req.user.uid }, select: { id: true } });
+
+        const document = await prisma.employeeDocument.upsert({
+            where: { employee_id_document_type: { employee_id: employee.id, document_type } },
+            update: { file_name, storage_key, content_type, size, uploaded_by: actor ? actor.id : undefined },
+            create: { employee_id: employee.id, document_type, file_name, storage_key, content_type, size, uploaded_by: actor ? actor.id : undefined },
+        });
+
+        // Remove the previous object once the new one is recorded.
+        if (existing && existing.storage_key && existing.storage_key !== storage_key) {
+            storage.deleteObject(existing.storage_key).catch((err) =>
+                console.error('Failed to delete replaced object:', err.message));
+        }
+
+        if (actor) {
+            logActivity({
+                actorId: actor.id,
+                action: 'DOCUMENT_UPLOADED',
+                entityType: 'employee',
+                entityId: employee_id,
+                description: `Uploaded ${document_type} for ${employee.full_name} (${employee_id})`,
+            });
+        }
+
+        res.status(201).json({ success: true, document, message: 'Document saved successfully' });
+    } catch (e) {
+        console.error('POST /employee/:id/documents failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
+
+// List a employee's document metadata (forms prefill + view page).
+router.get('/:employee_id/documents', requireAuth, async (req, res) => {
+    const { employee_id } = req.params;
+    try {
+        const employee = await prisma.employee.findUnique({ where: { employee_id } });
+        if (employee == null) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+
+        const documents = await prisma.employeeDocument.findMany({
+            where: { employee_id: employee.id },
+            orderBy: { document_type: 'asc' },
+        });
+
+        res.status(200).json({ success: true, documents });
+    } catch (e) {
+        console.error('GET /employee/:id/documents failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
+
+// Short-lived presigned GET URL to view/download a stored document.
+router.get('/:employee_id/documents/:id/download-url', requireAuth, async (req, res) => {
+    const { employee_id, id } = req.params;
+    try {
+        const employee = await prisma.employee.findUnique({ where: { employee_id } });
+        if (employee == null) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+
+        const document = await prisma.employeeDocument.findFirst({
+            where: { id: Number(id), employee_id: employee.id },
+        });
+        if (document == null) {
+            return res.status(404).json({ success: false, message: 'Document not found' });
+        }
+
+        const url = await storage.getDownloadUrl({ key: document.storage_key });
+        res.status(200).json({ success: true, url });
+    } catch (e) {
+        console.error('GET /employee/:id/documents/:id/download-url failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
+
+// Delete a document (object + metadata row).
+router.delete('/:employee_id/documents/:id', requireAuth, async (req, res) => {
+    const { employee_id, id } = req.params;
+    try {
+        const employee = await prisma.employee.findUnique({ where: { employee_id } });
+        if (employee == null) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+
+        const document = await prisma.employeeDocument.findFirst({
+            where: { id: Number(id), employee_id: employee.id },
+        });
+        if (document == null) {
+            return res.status(404).json({ success: false, message: 'Document not found' });
+        }
+
+        await prisma.employeeDocument.delete({ where: { id: document.id } });
+        storage.deleteObject(document.storage_key).catch((err) =>
+            console.error('Failed to delete object:', err.message));
+
+        const actor = await prisma.user.findUnique({ where: { google_sub: req.user.uid }, select: { id: true } });
+        if (actor) {
+            logActivity({
+                actorId: actor.id,
+                action: 'DOCUMENT_DELETED',
+                entityType: 'employee',
+                entityId: employee_id,
+                description: `Deleted ${document.document_type} for ${employee.full_name} (${employee_id})`,
+            });
+        }
+
+        res.status(200).json({ success: true, message: 'Document deleted successfully' });
+    } catch (e) {
+        console.error('DELETE /employee/:id/documents/:id failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
+
+// Manually trigger a reminder job (for testing — the cron only fires at 09:00).
+// Body: { job: 'daily' | 'monthly', force?: boolean }. force bypasses dedup.
+router.post('/reminders/run', requireAuth, async (req, res) => {
+    const { job, force = false } = req.body || {};
+    try {
+        let summary;
+        if (job === 'daily') {
+            summary = await runDailyReminders({ force });
+        } else if (job === 'monthly') {
+            summary = await runMonthlyBirthdayDigest({ force });
+        } else {
+            return res.status(400).json({ success: false, message: "job must be 'daily' or 'monthly'" });
+        }
+        res.status(200).json({ success: true, summary });
+    } catch (e) {
+        console.error('POST /employee/reminders/run failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
     }
 });
 
