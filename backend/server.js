@@ -45,6 +45,7 @@ app.get('/me', requireAuth, async (req, res) => {
 
 startScheduler();
 
-app.listen(3000, () => {
-    console.log('The server is running');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`The server is running on port ${PORT}`);
 });
