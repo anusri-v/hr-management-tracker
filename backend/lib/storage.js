@@ -16,15 +16,18 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 // else in the codebase needs to change.
 // ---------------------------------------------------------------------------
 
-const BUCKET = process.env.S3_BUCKET;
+// Accept either our S3_* names (local .env) or the Railway Bucket's native
+// variable names (ENDPOINT / BUCKET / ACCESS_KEY_ID / SECRET_ACCESS_KEY / REGION),
+// which Railway injects when a bucket is linked to the service.
+const BUCKET = process.env.S3_BUCKET || process.env.BUCKET;
 
 const s3 = new S3Client({
-    endpoint: process.env.S3_ENDPOINT,
-    region: process.env.S3_REGION || 'auto',
+    endpoint: process.env.S3_ENDPOINT || process.env.ENDPOINT,
+    region: process.env.S3_REGION || process.env.REGION || 'auto',
     forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
     credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY_ID,
-        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+        accessKeyId: process.env.S3_ACCESS_KEY_ID || process.env.ACCESS_KEY_ID,
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY,
     },
 });
 
