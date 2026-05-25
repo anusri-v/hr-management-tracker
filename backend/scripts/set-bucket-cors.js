@@ -16,6 +16,7 @@ const s3 = new S3Client({
 const ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'https://hr-management-tracker-frontend-production.up.railway.app',
 ];
 
 async function main() {
