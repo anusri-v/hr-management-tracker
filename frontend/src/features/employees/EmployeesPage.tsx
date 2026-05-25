@@ -1,14 +1,12 @@
 import { Button, Flex, Input, message, Modal, Select, Table, Typography } from "antd";
 import { PlusOutlined, SearchOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
-import apiClient from "../../utils/apiClient";
+import apiClient, { BASE_URL } from "../../utils/apiClient";
 import { useEffect, useRef, useState } from "react";
 import { departmentOptions, expatOptions, statusOptions } from "../../utils/constants/constants";
 import EmploymentStatusTag from "../../utils/components/EmploymentStatusTag";
 import ExpatStatusTag from "../../utils/components/ExpatStatusTag";
 import styles from './EmployeesPage.module.css';
-
-const BASE_URL = 'http://localhost:3000';
 
 const { Title } = Typography
 

@@ -13,6 +13,8 @@ const transporter = nodemailer.createTransport({
 
 // Recipient for all HR-facing notifications (access requests + reminders).
 const HR_EMAIL = process.env.HR_EMAIL || 'anusri.v@silq.net';
+// Base URL of the frontend, used in email links.
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 function formatDate(date) {
     return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -23,7 +25,7 @@ async function sendAccessRequestEmail({ userName, userEmail }) {
         from: process.env.MAIL_USER,
         to: HR_EMAIL,
         subject: 'New User Access Request in Employee Management',
-        text: `A new user - ${userName} (${userEmail}) is requesting access to the employee management system. To approve click on this link: http://localhost:5173/user-access`,
+        text: `A new user - ${userName} (${userEmail}) is requesting access to the employee management system. To approve click on this link: ${FRONTEND_URL}/user-access`,
     });
 }
 
@@ -72,7 +74,7 @@ async function sendAccessApprovedEmail({ userName, userEmail }) {
         from: process.env.MAIL_USER,
         to: userEmail,
         subject: 'Your Access Has Been Approved - Employee Management',
-        text: `Hi ${userName},\n\nYour access to the Employee Management System has been approved. You can now log in at http://localhost:5173.\n\nWelcome aboard!`,
+        text: `Hi ${userName},\n\nYour access to the Employee Management System has been approved. You can now log in at ${FRONTEND_URL}.\n\nWelcome aboard!`,
     });
 }
 

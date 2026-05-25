@@ -12,8 +12,13 @@ const { startScheduler } = require('./lib/scheduler');
 
 const app = express();
 
+const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: corsOrigins,
     credentials: true,
 }));
 app.use(express.json());

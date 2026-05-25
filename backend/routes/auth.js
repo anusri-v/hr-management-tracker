@@ -10,6 +10,14 @@ const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const prisma = require('../lib/prisma');
 
+// Session cookie options. For cross-site HTTPS (frontend and backend on
+// different domains in prod) set COOKIE_SECURE=true and COOKIE_SAMESITE=none.
+const COOKIE_OPTIONS = {
+    httpOnly: true,
+    sameSite: process.env.COOKIE_SAMESITE || 'lax',
+    secure: process.env.COOKIE_SECURE === 'true',
+};
+
 router.post('/google', async (req, res) => {
     const { credential } = req.body;
     try {
@@ -55,7 +63,7 @@ router.post('/google', async (req, res) => {
 
         const session = jwt.sign({ uid: sub, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res
-            .cookie('session', session, { httpOnly: true, sameSite: 'lax', secure: false })
+            .cookie('session', session, COOKIE_OPTIONS)
             .json({ user: { email, name, picture } });
     } catch (e) {
         console.error('verifyIdToken failed:', e.message);
@@ -64,7 +72,7 @@ router.post('/google', async (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-    res.clearCookie('session').json({ ok: true });
+    res.clearCookie('session', COOKIE_OPTIONS).json({ ok: true });
 });
 
 module.exports = router;
