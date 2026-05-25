@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Col, Empty, Flex, message, Row } from "antd";
+import { Button, Col, Empty, Flex, message, Row, Spin } from "antd";
 import { FileTextOutlined, EyeOutlined } from "@ant-design/icons";
 import apiClient from "../../../utils/apiClient";
 import type { EmployeeDocument } from "../../../utils/types/documents";
@@ -12,6 +12,7 @@ type Props = {
 
 const DocumentsTabContent = ({ employeeId }: Props) => {
     const [documents, setDocuments] = useState<EmployeeDocument[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (employeeId) loadDocuments();
@@ -19,6 +20,7 @@ const DocumentsTabContent = ({ employeeId }: Props) => {
     }, [employeeId]);
 
     async function loadDocuments() {
+        setLoading(true);
         try {
             const data = await apiClient.get<{ success: boolean; documents: EmployeeDocument[] }>(
                 `/employee/${employeeId}/documents`,
@@ -26,6 +28,8 @@ const DocumentsTabContent = ({ employeeId }: Props) => {
             if (data.success) setDocuments(data.documents);
         } catch (e) {
             console.error('Failed to load documents:', e);
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -75,6 +79,10 @@ const DocumentsTabContent = ({ employeeId }: Props) => {
             </div>
         );
     };
+
+    if (loading) {
+        return <Flex justify="center" align="center" style={{ minHeight: 200 }}><Spin /></Flex>;
+    }
 
     if (documents.length === 0) {
         return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No documents uploaded" />;

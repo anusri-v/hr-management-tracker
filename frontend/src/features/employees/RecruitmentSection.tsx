@@ -1,5 +1,6 @@
 import { Button, Col, DatePicker, Flex, Form, Input, message, Radio, Row } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
+import { useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import type { Employee } from "../../utils/types/employee";
 import apiClient from "../../utils/apiClient";
@@ -39,6 +40,8 @@ const RecruitmentSection = ({ employee, setEmployee, handleSectionNavigation }: 
         }));
     };
 
+    const [saving, setSaving] = useState(false);
+
     async function handleEmployeeUpdate(values: RecruitmentFormValues) {
         const employeeInfo = {
             source_of_hire: values.source_of_hire,
@@ -47,6 +50,7 @@ const RecruitmentSection = ({ employee, setEmployee, handleSectionNavigation }: 
             interview_panel: values.interview_panel,
         }
 
+        setSaving(true);
         try {
             const data = await apiClient.patch<{ success: boolean; message: string }>(`/employee/${employee.employee_id}`, { employeeInfo });
 
@@ -60,6 +64,8 @@ const RecruitmentSection = ({ employee, setEmployee, handleSectionNavigation }: 
         } catch (e) {
             console.error('Update failed: ', e)
             message.error('Internal server error')
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -110,7 +116,7 @@ const RecruitmentSection = ({ employee, setEmployee, handleSectionNavigation }: 
                         <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                         <Flex gap={16}>
                             <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>
-                            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                            <Button type="primary" htmlType="submit" loading={saving} icon={<SaveOutlined />}>
                                 Save & Next
                             </Button>
                         </Flex>

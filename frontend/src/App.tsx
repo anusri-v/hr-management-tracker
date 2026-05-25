@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { googleLogout } from '@react-oauth/google'
+import { Flex, Spin } from 'antd'
+import GlobalLoadingBar from './utils/components/GlobalLoadingBar'
 import LoginPage from './features/auth/LoginPage'
 import AccessPendingPage from './features/auth/AccessPendingPage'
 import AccessRevokedPage from './features/auth/AccessRevokedPage'
@@ -66,11 +68,20 @@ function App() {
     setUser(null)
   }
 
-  if (loading) return <p>Loading…</p>
+  if (loading) return (
+    <>
+      <GlobalLoadingBar />
+      <Flex justify="center" align="center" style={{ height: '100vh' }}>
+        <Spin size="large" />
+      </Flex>
+    </>
+  )
 
   const home = homeFor(user)
 
   return (
+    <>
+    <GlobalLoadingBar />
     <Routes>
       <Route
         path="/login"
@@ -119,6 +130,7 @@ function App() {
       </Route>
       <Route path="*" element={<Navigate to={home} replace />} />
     </Routes>
+    </>
   )
 }
 

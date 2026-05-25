@@ -30,6 +30,7 @@ const EmploymentSection = ({ employee, setEmployee, handleSectionNavigation }: B
     const [form] = Form.useForm<EmploymentFormValues>();
     const [allManagers, setAllManagers] = useState<ManagerOption[]>([]);
     const [managerLoading, setManagerLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     const managerOptions = allManagers.filter(e => e.value !== employee.employee_id);
 
@@ -86,6 +87,7 @@ const EmploymentSection = ({ employee, setEmployee, handleSectionNavigation }: B
             expat_status: values.expat_status,
         }
 
+        setSaving(true);
         try {
             const data = await apiClient.patch<{ success: boolean; message: string }>(`/employee/${employee.employee_id}`, { employeeInfo });
 
@@ -99,6 +101,8 @@ const EmploymentSection = ({ employee, setEmployee, handleSectionNavigation }: B
         } catch (e) {
             console.error('Update failed: ', e)
             message.error('Internal server error')
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -184,7 +188,7 @@ const EmploymentSection = ({ employee, setEmployee, handleSectionNavigation }: B
                         <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                         <Flex gap={16}>
                             <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>
-                            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                            <Button type="primary" htmlType="submit" loading={saving} icon={<SaveOutlined />}>
                                 Save & Next
                             </Button>
                         </Flex>

@@ -1,4 +1,4 @@
-import { Flex, Button, Typography, Row, Col, message } from "antd";
+import { Flex, Button, Typography, Row, Col, message, Spin } from "antd";
 import { ArrowRightOutlined, AuditOutlined, BellOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
@@ -22,14 +22,14 @@ const DashboardPage = () => {
     activeEmployees: 0,
     resignedEmployees: 0,
   })
+  const [summaryLoading, setSummaryLoading] = useState(true)
 
   useEffect(() => {
     handleEmployeeSummary()
-    console.log("Employee Summary: ", employeeSummary);
-
   }, [])
 
   async function handleEmployeeSummary() {
+    setSummaryLoading(true)
     try {
       const data = await apiClient.get<{ success: boolean; message: string; summary: { total: number; active: number; resigned: number } }>('/employee/summary');
       if (!data.success) {
@@ -45,6 +45,8 @@ const DashboardPage = () => {
     } catch (e) {
       console.error('Failed to fetch employee summary: ', e)
       message.error('Internal server error')
+    } finally {
+      setSummaryLoading(false)
     }
   }
 
@@ -59,6 +61,7 @@ const DashboardPage = () => {
           </Flex>
         </Flex>
 
+        <Spin spinning={summaryLoading}>
         <Row gutter={16} className={styles.statsRow}>
           <Col className="gutter-row" span={6}>
             <Flex vertical className={styles.statCard}>
@@ -85,6 +88,7 @@ const DashboardPage = () => {
             </Flex>
           </Col>
         </Row>
+        </Spin>
 
         <Flex>
           <Flex vertical className={styles.remindersPanel}>

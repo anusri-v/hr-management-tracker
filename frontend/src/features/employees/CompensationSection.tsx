@@ -1,5 +1,6 @@
 import { Button, Col, Flex, Form, InputNumber, message, Row, Select } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
+import { useState } from "react";
 import type { Employee } from "../../utils/types/employee";
 import { emptyCompensationDetails } from "../../utils/types/employee";
 import { CURRENCY_PREFIX, currencyOptions } from "../../utils/constants/constants";
@@ -44,7 +45,10 @@ const CompensationSection = ({ employee, setEmployee, handleSectionNavigation }:
         }));
     };
 
+    const [saving, setSaving] = useState(false);
+
     async function handleCompensationUpdate(values: CompensationFormValues) {
+        setSaving(true);
         try {
             const data = await apiClient.post<{ success: boolean; message: string }>(
                 `/employee/${employee.employee_id}/compensation`,
@@ -61,6 +65,8 @@ const CompensationSection = ({ employee, setEmployee, handleSectionNavigation }:
         } catch (e) {
             console.error('Update failed: ', e)
             message.error('Internal server error')
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -94,7 +100,7 @@ const CompensationSection = ({ employee, setEmployee, handleSectionNavigation }:
                         <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                         <Flex gap={16}>
                             <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>
-                            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                            <Button type="primary" htmlType="submit" loading={saving} icon={<SaveOutlined />}>
                                 Save & Next
                             </Button>
                         </Flex>

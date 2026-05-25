@@ -11,6 +11,7 @@ const ActiveUsersTabContent = () => {
     const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -18,12 +19,15 @@ const ActiveUsersTabContent = () => {
     }, []);
 
     async function fetchUsers() {
+        setFetching(true);
         try {
             const data = await apiClient.get<{ count: number, users: User[] }>('/users?status=1');
             setUsers(data.users);
         } catch (e) {
             console.error('Failed to fetch users: ', e)
             message.error('Internal server error')
+        } finally {
+            setFetching(false);
         }
     }
 
@@ -87,7 +91,7 @@ const ActiveUsersTabContent = () => {
 
     return (
         <>
-            <Table columns={columns} dataSource={users} rowKey="id" />
+            <Table columns={columns} dataSource={users} rowKey="id" loading={fetching} />
 
             <Modal
                 title="Revoke User Access"

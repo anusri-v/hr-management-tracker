@@ -1,4 +1,5 @@
 import { Button, Col, DatePicker, Flex, Form, Input, message, Radio, Row } from "antd";
+import { useState } from "react";
 import TextArea from "antd/es/input/TextArea";
 import { SaveOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
@@ -74,6 +75,8 @@ const BasicInformationSection = ({ employee, setEmployee, handleSectionNavigatio
         }));
     };
 
+    const [saving, setSaving] = useState(false);
+
     async function handleEmployeeSave(values: BasicInfoFormValues) {
         const employeeInfo = {
             employee_id: values.employee_id,
@@ -94,6 +97,7 @@ const BasicInformationSection = ({ employee, setEmployee, handleSectionNavigatio
             },
         };
 
+        setSaving(true);
         try {
             const data = await (isEditMode
                 ? apiClient.patch<{ success: boolean; message: string; employee: Employee }>(`/employee/${employee.employee_id}`, { employeeInfo })
@@ -110,6 +114,8 @@ const BasicInformationSection = ({ employee, setEmployee, handleSectionNavigatio
         } catch (e) {
             console.error('Save failed:', e);
             message.error('Internal server error');
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -257,7 +263,7 @@ const BasicInformationSection = ({ employee, setEmployee, handleSectionNavigatio
                     <Button htmlType="button" disabled>Previous</Button>
                     <Flex gap={16}>
                         {isEditMode && <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>}
-                        <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                        <Button type="primary" htmlType="submit" loading={saving} icon={<SaveOutlined />}>
                             Save & Next
                         </Button>
                     </Flex>

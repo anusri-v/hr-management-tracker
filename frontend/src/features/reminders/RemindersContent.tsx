@@ -1,4 +1,4 @@
-import { Empty, Flex, message } from "antd";
+import { Empty, Flex, message, Spin } from "antd";
 import { useState, useEffect } from "react";
 import apiClient from "../../utils/apiClient";
 import BirthdayReminder from "../../utils/components/BirthdayReminder";
@@ -11,12 +11,14 @@ import styles from './RemindersContent.module.css';
 const RemindersContent = () => {
 
     const [reminders, setReminders] = useState<ReminderType[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         handleReminderData()
     }, [])
 
     async function handleReminderData() {
+        setLoading(true)
         try {
             const data = await apiClient.get<{ success: boolean; reminders: ReminderType[]; total: number }>(`/employee/reminders`);
             if (!data.success) {
@@ -27,6 +29,8 @@ const RemindersContent = () => {
         } catch (e) {
             console.error('Failed to fetch reminders: ', e)
             message.error('Internal server error')
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -46,7 +50,7 @@ const RemindersContent = () => {
     }
 
     return (
-        <>
+        <Spin spinning={loading}>
             <Flex vertical className={styles.reminderList}>
                 {reminders.length === 0
                     ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No upcoming reminders" />
@@ -56,7 +60,7 @@ const RemindersContent = () => {
                         </div>
                     ))}
             </Flex>
-        </>
+        </Spin>
     );
 
 }

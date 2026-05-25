@@ -1,5 +1,6 @@
 import { Button, Col, Flex, Form, Input, message, Row } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
+import { useState } from "react";
 import type { Employee } from "../../utils/types/employee";
 import { emptyStatutoryDetails } from "../../utils/types/employee";
 import apiClient from "../../utils/apiClient";
@@ -52,7 +53,10 @@ const StatutorySection = ({ employee, setEmployee, handleSectionNavigation }: Ba
         }));
     };
 
+    const [saving, setSaving] = useState(false);
+
     async function handleStatutoryUpdate(values: StatutoryFormValues) {
+        setSaving(true);
         try {
             const data = await apiClient.post<{ success: boolean; message: string }>(
                 `/employee/${employee.employee_id}/statutory`,
@@ -76,6 +80,8 @@ const StatutorySection = ({ employee, setEmployee, handleSectionNavigation }: Ba
         } catch (e) {
             console.error('Update failed: ', e)
             message.error('Internal server error')
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -134,7 +140,7 @@ const StatutorySection = ({ employee, setEmployee, handleSectionNavigation }: Ba
                         <Button onClick={() => { handleSectionNavigation('prev') }}>Previous</Button>
                         <Flex gap={16}>
                             <Button onClick={() => { handleSectionNavigation('next') }}>Next</Button>
-                            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                            <Button type="primary" htmlType="submit" loading={saving} icon={<SaveOutlined />}>
                                 Save & Next
                             </Button>
                         </Flex>

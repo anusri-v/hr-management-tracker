@@ -10,18 +10,22 @@ const AccessRequestsTabContent = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
 
     useEffect(() => {
         fetchUsers();
     }, []);
 
     async function fetchUsers() {
+        setFetching(true);
         try {
             const data = await apiClient.get<{ count: number, users: User[] }>('/users?status=0&status=2');
             setUsers(data.users);
         } catch (e) {
             console.error('Failed to fetch users: ', e)
             message.error('Internal server error')
+        } finally {
+            setFetching(false);
         }
     }
 
@@ -90,7 +94,7 @@ const AccessRequestsTabContent = () => {
 
     return (
         <>
-            <Table columns={columns} dataSource={users} rowKey="id" />
+            <Table columns={columns} dataSource={users} rowKey="id" loading={fetching} />
 
             <Modal
                 title="Approve User Access"

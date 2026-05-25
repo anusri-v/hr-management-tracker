@@ -1,4 +1,4 @@
-import { Button, Flex, message, Tabs, type TabsProps } from "antd"
+import { Button, Flex, message, Spin, Tabs, type TabsProps } from "antd"
 import apiClient from "../../utils/apiClient"
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -22,13 +22,14 @@ const ViewEmployee = () => {
     const [employee, setEmployee] = useState<Employee>()
     const [modalOpen, setModalOpen] = useState<boolean>(false);
     const [activeTab, setActiveTab] = useState<string>('1');
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         if (employeeId) handleGetEmployeeData();
-        console.log("employee data: ", employee)
     }, [employeeId])
 
     async function handleGetEmployeeData() {
+        setLoading(true);
         try {
             const data = await apiClient.get<{ success: boolean; message: string; employee: Employee }>(`/employee/${employeeId}`);
             if (!data.success) {
@@ -38,12 +39,13 @@ const ViewEmployee = () => {
 
             setEmployee({ ...data.employee })
             if (data.employee.employment_status === 'resigned') setActiveTab('6');
-            console.log("After set employee: ", employee, data);
 
             message.success(data.message)
         } catch (e) {
             console.error('Update failed: ', e)
             message.error('Internal server error')
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -89,6 +91,10 @@ const ViewEmployee = () => {
 
     const handleModalClose = () => {
         setModalOpen(false);
+    }
+
+    if (loading) {
+        return <Flex justify="center" align="center" style={{ minHeight: '60vh' }}><Spin size="large" /></Flex>
     }
 
     return (

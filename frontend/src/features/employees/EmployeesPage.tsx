@@ -29,6 +29,7 @@ const EmployeesPage = () => {
   const [expatStatus, setExpatStatus] = useState<string | undefined>(undefined);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +43,7 @@ const EmployeesPage = () => {
   }, [debouncedSearch, status, department, expatStatus])
 
   async function handleEmployeeDataFetch() {
+    setListLoading(true);
     try {
       const params = new URLSearchParams();
       if (debouncedSearch) params.set('search', debouncedSearch);
@@ -58,6 +60,8 @@ const EmployeesPage = () => {
     } catch (e) {
       console.error('Failed to fetch employee data: ', e)
       message.error('Failed to fetch employee data')
+    } finally {
+      setListLoading(false);
     }
   }
 
@@ -219,7 +223,7 @@ const EmployeesPage = () => {
         />
       </Flex>
 
-      <Table dataSource={employeeData} columns={columns} />
+      <Table dataSource={employeeData} columns={columns} loading={listLoading} />
 
       <Modal
         title="Import Results"

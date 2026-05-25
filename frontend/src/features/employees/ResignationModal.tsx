@@ -27,6 +27,7 @@ type Props = {
 const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
     const [form] = Form.useForm<ResignationFormValues>();
     const [documents, setDocuments] = useState<Record<string, EmployeeDocument>>({});
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         if (open && employee?.employee_id) loadDocuments();
@@ -69,6 +70,7 @@ const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
     const handleFinish = async (values: ResignationFormValues) => {
         if (!employee?.employee_id) return;
 
+        setSubmitting(true);
         try {
             const data = await apiClient.post<{ success: boolean; message: string }>(
                 `/employee/${employee.employee_id}/exit_details`,
@@ -88,6 +90,8 @@ const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
         } catch (e) {
             console.error('exit_details submit failed:', e);
             message.error('Internal server error');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -101,7 +105,7 @@ const ResignationModal = ({ open, employee, onClose, onSuccess }: Props) => {
             onCancel={handleClose}
             footer={[
                 <Button key="back" onClick={handleClose}>Cancel</Button>,
-                <Button key="submit" danger onClick={() => form.submit()}>{confirmLabel}</Button>,
+                <Button key="submit" danger loading={submitting} onClick={() => form.submit()}>{confirmLabel}</Button>,
             ]}
         >
             <Flex vertical>
