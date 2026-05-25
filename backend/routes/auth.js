@@ -33,9 +33,10 @@ router.post('/google', async (req, res) => {
 
         const domain = hd || email.split('@')[1]?.toLowerCase();
         if (!ALLOWED_DOMAINS.includes(domain)) {
+            const allowed = ALLOWED_DOMAINS.map((d) => `@${d}`).join(' and ');
             return res.status(403).json({
                 error: 'Access restricted',
-                detail: `Sign-in is limited to authorized domains. Your account (${email}) is not eligible.`,
+                detail: `Only ${allowed} Google accounts can access this portal. ${email} is not eligible.`,
             });
         }
 

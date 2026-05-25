@@ -1,5 +1,5 @@
 import { GoogleLogin } from '@react-oauth/google';
-import { Flex } from 'antd';
+import { Alert, Flex } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
 import styles from './LoginPage.module.css';
 
@@ -9,7 +9,7 @@ type Props = {
     error?: string | null;
 };
 
-const LoginPage = ({ onCredential, onError, error: _error }: Props) => {
+const LoginPage = ({ onCredential, onError, error }: Props) => {
     return (
 
         <Flex className={styles.page}>
@@ -33,6 +33,15 @@ const LoginPage = ({ onCredential, onError, error: _error }: Props) => {
                         onSuccess={(res) => res.credential && onCredential(res.credential)}
                         onError={onError}
                     />
+                    {error && (
+                        <Alert
+                            type="error"
+                            showIcon
+                            message="Access denied"
+                            description={error}
+                            className={styles.errorAlert}
+                        />
+                    )}
                     <Flex gap={16} className={styles.notice}>
                         <LockOutlined className={styles.noticeIcon} />
                         <span className={styles.noticeText}>

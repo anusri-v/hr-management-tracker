@@ -46,6 +46,12 @@
   color: var(--color-primary-dark);
 }
 
+.errorAlert {
+  width: 400px;
+  margin-top: 16px;
+  text-align: left;
+}
+
 .notice {
   background: var(--color-primary-bg);
   border: 2px solid var(--color-primary-border);
