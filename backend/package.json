@@ -32,6 +32,7 @@
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.7",
+    "openai": "^6.44.0",
     "pg": "^8.20.0",
     "prisma-field-encryption": "^1.6.0"
   },

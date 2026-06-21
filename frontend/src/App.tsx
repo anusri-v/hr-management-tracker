@@ -15,6 +15,7 @@ import ActivityLogPage from './features/activityLog/ActivityLogPage'
 import AddEmployee from './features/employees/AddEmployee'
 import ViewEmployee from './features/employees/ViewEmployee'
 import EditEmployee from './features/employees/EditEmployee'
+import BulkDocumentUploadPage from './features/employees/BulkDocumentUploadPage'
 import apiClient, { ApiError } from './utils/apiClient'
 
 export type User = {
@@ -125,6 +126,7 @@ function App() {
         <Route path="/user-access" element={<UserAccessPage />} />
         <Route path="/activity-log" element={<ActivityLogPage />} />
         <Route path="/employees/add" element={<AddEmployee />} />
+        <Route path="/employees/bulk-documents" element={<BulkDocumentUploadPage />} />
         <Route path="/employees/view/:employeeId" element={<ViewEmployee />} />
         <Route path="/employees/edit/:employeeId" element={<EditEmployee />} />
       </Route>

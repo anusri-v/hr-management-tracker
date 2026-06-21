@@ -1,5 +1,5 @@
 import { Button, Flex, Input, message, Modal, Select, Table, Typography } from "antd";
-import { PlusOutlined, SearchOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, UploadOutlined, DownloadOutlined, FileAddOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import apiClient, { BASE_URL } from "../../utils/apiClient";
 import { useEffect, useRef, useState } from "react";
@@ -183,6 +183,12 @@ const EmployeesPage = () => {
             onClick={handleExport}
           >
             Export Excel
+          </Button>
+          <Button
+            icon={<FileAddOutlined />}
+            onClick={() => navigate('/employees/bulk-documents')}
+          >
+            Bulk Documents
           </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => { navigate('/employees/add') }}>Add Employee</Button>
         </Flex>

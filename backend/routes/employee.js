@@ -8,16 +8,23 @@ const prisma = require('../lib/prisma');
 const requireAuth = require('../middleware/requireAuth');
 const { logActivity } = require('../lib/activityLog');
 const storage = require('../lib/storage');
+const { classifyDocuments } = require('../lib/documentClassifier');
 const { runDailyReminders, runMonthlyBirthdayDigest } = require('../lib/reminderJobs');
 
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Bulk document classification limits.
+const MAX_BULK_DOC_FILES = 50;
+const MAX_DOC_FILE_BYTES = 5 * 1024 * 1024; // 5MB, matches the single-upload UI
+const CLASSIFIABLE_CONTENT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 
 // Allowed employee document types (onboarding + exit). Keep in sync with the
 // frontend label map in src/utils/types.
 const DOCUMENT_TYPES = new Set([
     // onboarding
     'offer_letter', 'signed_offer_letter', 'aadhar_card', 'pan_card',
-    'bank_passbook', 'passport', 'photo', 'driving_license', 'other',
+    'bank_passbook', 'passport', 'photo', 'driving_license',
+    'tenth_marksheet', 'twelfth_marksheet', 'other',
     // exit
     'no_dues_form', 'exit_interview_form', 'resignation_acceptance_letter',
 ]);
@@ -881,6 +888,78 @@ router.get('/', async (req, res) => {
 // ---------------------------------------------------------------------------
 // Employee documents (Railway bucket, presigned-URL flow)
 // ---------------------------------------------------------------------------
+
+// Bulk document upload — step 0: classify a batch of files (advisory only).
+// HR drops many arbitrarily-named files; an LLM proposes which employee and
+// document type each belongs to. Nothing is stored here — the frontend shows
+// the proposals for review, then commits each confirmed file through the
+// single-document flow below (upload-url -> PUT -> POST metadata).
+router.post('/documents/bulk-classify', requireAuth, upload.array('files', MAX_BULK_DOC_FILES), async (req, res) => {
+    try {
+        const all = req.files || [];
+        if (all.length === 0) {
+            return res.status(400).json({ success: false, message: 'No files uploaded' });
+        }
+
+        // Keep each file's original position so the frontend can map proposals
+        // back to the File objects it selected.
+        const files = [];
+        const skipped = [];
+        all.forEach((f, index) => {
+            if (!CLASSIFIABLE_CONTENT_TYPES.has(f.mimetype)) {
+                skipped.push({ index, file_name: f.originalname, reason: 'Unsupported file type (allowed: PDF, JPG, PNG)' });
+                return;
+            }
+            if (f.size > MAX_DOC_FILE_BYTES) {
+                skipped.push({ index, file_name: f.originalname, reason: 'Exceeds 5MB limit' });
+                return;
+            }
+            files.push({ index, file_name: f.originalname, content_type: f.mimetype, size: f.size, buffer: f.buffer });
+        });
+
+        if (files.length === 0) {
+            return res.status(400).json({ success: false, message: 'No supported files to classify', skipped });
+        }
+
+        const employees = await prisma.employee.findMany({
+            select: { employee_id: true, full_name: true, department: true },
+            orderBy: { employee_id: 'asc' },
+        });
+        const nameById = new Map(employees.map((e) => [e.employee_id, e.full_name]));
+
+        const classifications = await classifyDocuments({
+            files,
+            roster: employees,
+            documentTypes: Array.from(DOCUMENT_TYPES),
+        });
+        const byIndex = new Map(classifications.map((c) => [c.index, c]));
+
+        const proposals = files.map((f) => {
+            const c = byIndex.get(f.index) || {};
+            // Only trust an employee_id that actually exists in the roster.
+            const employee_id = c.employee_id && nameById.has(c.employee_id) ? c.employee_id : '';
+            return {
+                index: f.index,
+                file_name: f.file_name,
+                content_type: f.content_type,
+                size: f.size,
+                employee_id,
+                employee_name: employee_id ? nameById.get(employee_id) : '',
+                document_type: c.document_type || '',
+                confidence: typeof c.confidence === 'number' ? c.confidence : 0,
+                method: c.method || '',
+            };
+        });
+
+        res.status(200).json({ success: true, proposals, skipped });
+    } catch (e) {
+        if (e.code === 'NO_API_KEY') {
+            return res.status(503).json({ success: false, message: 'Document classification is not configured (missing OPENAI_API_KEY)' });
+        }
+        console.error('POST /employee/documents/bulk-classify failed:', e.message);
+        res.status(500).json({ error: 'Internal server error', message: e.message });
+    }
+});
 
 // Step 1: hand the browser a short-lived presigned PUT URL to upload directly.
 router.post('/:employee_id/documents/upload-url', requireAuth, async (req, res) => {

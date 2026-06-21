@@ -21,6 +21,8 @@ export const ONBOARDING_DOCUMENT_TYPES = [
     'passport',
     'photo',
     'driving_license',
+    'tenth_marksheet',
+    'twelfth_marksheet',
     'other',
 ] as const;
 
@@ -40,6 +42,8 @@ export const DOCUMENT_LABELS: Record<string, string> = {
     passport: 'Passport',
     photo: 'Photograph',
     driving_license: 'Driving License',
+    tenth_marksheet: '10th Marksheet',
+    twelfth_marksheet: '12th Marksheet',
     other: 'Other',
     no_dues_form: 'No Dues Form',
     exit_interview_form: 'Exit Interview Form',

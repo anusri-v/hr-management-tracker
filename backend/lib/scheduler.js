@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { runDailyReminders, runMonthlyBirthdayDigest } = require('./reminderJobs');
+const { runDailyReminders, runMonthlyBirthdayDigest, deactivatePastResignedEmployees } = require('./reminderJobs');
 
 const TZ = process.env.REMINDER_CRON_TZ || 'Asia/Kolkata';
 
@@ -17,6 +17,8 @@ function startScheduler() {
     cron.schedule('0 9 * * *', () => runJob('daily reminders', runDailyReminders), { timezone: TZ });
     // 1st of every month at 09:00 — monthly birthday digest.
     cron.schedule('0 9 1 * *', () => runJob('monthly birthday digest', runMonthlyBirthdayDigest), { timezone: TZ });
+    // Daily at 00:05 — flip resigned employees to inactive the day after their last working day.
+    cron.schedule('5 0 * * *', () => runJob('deactivate resigned', deactivatePastResignedEmployees), { timezone: TZ });
     console.log(`Reminder scheduler started (timezone: ${TZ})`);
 }
 

@@ -161,4 +161,34 @@ async function runMonthlyBirthdayDigest({ force = false } = {}) {
     return summary;
 }
 
-module.exports = { runDailyReminders, runMonthlyBirthdayDigest };
+// Daily job: flip resigned employees to inactive the day after their last
+// working day. last_working_day < startOfToday means the last working day has
+// fully passed (on the LWD itself they are still resigned/serving notice).
+async function deactivatePastResignedEmployees() {
+    const today = startOfToday();
+    const summary = { job: 'deactivate_resigned', date: isoDay(today), deactivated: [], errors: [] };
+
+    const exits = await prisma.exitDetails.findMany({
+        where: {
+            last_working_day: { lt: today },
+            employee: { is: { employment_status: 'resigned' } },
+        },
+        include: { employee: { select: { id: true, employee_id: true, full_name: true } } },
+    });
+
+    for (const exit of exits) {
+        try {
+            await prisma.employee.update({
+                where: { id: exit.employee.id },
+                data: { employment_status: 'inactive' },
+            });
+            summary.deactivated.push(exit.employee.employee_id);
+        } catch (e) {
+            summary.errors.push(`${exit.employee.employee_id}: ${e.message}`);
+        }
+    }
+
+    return summary;
+}
+
+module.exports = { runDailyReminders, runMonthlyBirthdayDigest, deactivatePastResignedEmployees };
